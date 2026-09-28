@@ -1,0 +1,434 @@
+{
+  "entities": {
+    "Transaction": {
+      "title": "Transaction",
+      "description": "A mobile payment record including M-Pesa, Airtel Money, or QR code transaction details",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique transaction document identifier",
+          "maxLength": 128
+        },
+        "code": {
+          "type": "string",
+          "description": "Official 10-character alphanumeric transaction reference code (e.g. SB45HG98LK)",
+          "minLength": 6,
+          "maxLength": 20
+        },
+        "customerPhone": {
+          "type": "string",
+          "description": "Customer mobile phone number",
+          "maxLength": 30
+        },
+        "customerName": {
+          "type": "string",
+          "description": "Customer name or walk-in label",
+          "maxLength": 150
+        },
+        "businessId": {
+          "type": "string",
+          "description": "Identifier of the receiving merchant business",
+          "maxLength": 128
+        },
+        "businessName": {
+          "type": "string",
+          "description": "Name of the business",
+          "maxLength": 150
+        },
+        "amount": {
+          "type": "number",
+          "description": "Transaction amount in Kenyan Shillings (KES)"
+        },
+        "fee": {
+          "type": "number",
+          "description": "Customer surcharge or transaction fee"
+        },
+        "paymentMethod": {
+          "type": "string",
+          "description": "Payment channel used",
+          "enum": ["MPESA_EXPRESS", "MPESA_TILL", "MPESA_PAYBILL", "AIRTEL_MONEY", "QR_PAY", "CARD"]
+        },
+        "status": {
+          "type": "string",
+          "description": "Payment processing status",
+          "enum": ["COMPLETED", "PENDING", "FAILED", "REVERSED"]
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "ISO timestamp when the transaction was completed",
+          "maxLength": 60
+        },
+        "reference": {
+          "type": "string",
+          "description": "Internal POS receipt or invoice number",
+          "maxLength": 60
+        },
+        "tillNumber": {
+          "type": "string",
+          "description": "Merchant Buy Goods Till number",
+          "maxLength": 20
+        },
+        "paybillNumber": {
+          "type": "string",
+          "description": "Merchant Paybill number",
+          "maxLength": 20
+        },
+        "accountRef": {
+          "type": "string",
+          "description": "Paybill account reference",
+          "maxLength": 60
+        },
+        "verifiedBy": {
+          "type": "string",
+          "description": "Channel or user that verified the payment",
+          "maxLength": 100
+        },
+        "verifiedAt": {
+          "type": "string",
+          "description": "Verification timestamp",
+          "maxLength": 60
+        },
+        "smsReceiptText": {
+          "type": "string",
+          "description": "Simulated or actual Safaricom / telecom SMS receipt payload",
+          "maxLength": 1000
+        },
+        "notes": {
+          "type": "string",
+          "description": "Transaction item notes or basket description",
+          "maxLength": 500
+        }
+      },
+      "required": ["code", "amount", "paymentMethod", "status", "timestamp"]
+    },
+    "Business": {
+      "title": "Business",
+      "description": "Merchant business profile and mobile payment channel configurations",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Business ID",
+          "maxLength": 128
+        },
+        "name": {
+          "type": "string",
+          "description": "Business trade name",
+          "maxLength": 150
+        },
+        "category": {
+          "type": "string",
+          "description": "Business industry or category",
+          "maxLength": 80
+        },
+        "tillNumber": {
+          "type": "string",
+          "description": "Active Lipa na M-Pesa Buy Goods Till number",
+          "maxLength": 20
+        },
+        "paybillNumber": {
+          "type": "string",
+          "description": "Active M-Pesa Paybill number",
+          "maxLength": 20
+        },
+        "accountRef": {
+          "type": "string",
+          "description": "Default Paybill account reference name",
+          "maxLength": 60
+        },
+        "currency": {
+          "type": "string",
+          "description": "ISO currency code (e.g. KES)",
+          "maxLength": 10
+        },
+        "branch": {
+          "type": "string",
+          "description": "Operating store branch location",
+          "maxLength": 120
+        },
+        "phone": {
+          "type": "string",
+          "description": "Business telephone number",
+          "maxLength": 30
+        },
+        "email": {
+          "type": "string",
+          "description": "Business contact email",
+          "maxLength": 120
+        },
+        "address": {
+          "type": "string",
+          "description": "Physical store address",
+          "maxLength": 200
+        },
+        "dailyTarget": {
+          "type": "number",
+          "description": "Daily mobile inflow revenue target in KES"
+        }
+      },
+      "required": ["name", "tillNumber", "currency"]
+    },
+    "Customer": {
+      "title": "Customer",
+      "description": "Customer mobile account profile, visit metrics, and loyalty rewards",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique customer ID",
+          "maxLength": 128
+        },
+        "name": {
+          "type": "string",
+          "description": "Customer display name",
+          "maxLength": 150
+        },
+        "phone": {
+          "type": "string",
+          "description": "Customer mobile number",
+          "maxLength": 30
+        },
+        "email": {
+          "type": "string",
+          "description": "Customer email",
+          "maxLength": 120
+        },
+        "totalSpent": {
+          "type": "number",
+          "description": "Lifetime amount spent at merchant in KES"
+        },
+        "transactionCount": {
+          "type": "number",
+          "description": "Total completed transactions count"
+        },
+        "loyaltyPoints": {
+          "type": "number",
+          "description": "Accumulated merchant loyalty points"
+        },
+        "lastVisit": {
+          "type": "string",
+          "description": "Timestamp of most recent visit",
+          "maxLength": 60
+        }
+      },
+      "required": ["name", "phone", "totalSpent", "loyaltyPoints"]
+    },
+    "ManualEntryAudit": {
+      "title": "ManualEntryAudit",
+      "description": "Digital ledger versus paper counter notebook audit comparison record",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Audit comparison ID",
+          "maxLength": 128
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Time when the comparison was logged",
+          "maxLength": 60
+        },
+        "notebookAmount": {
+          "type": "number",
+          "description": "Amount written by cashier in paper notebook in KES"
+        },
+        "systemAmount": {
+          "type": "number",
+          "description": "Actual amount registered in the automated system in KES"
+        },
+        "customerName": {
+          "type": "string",
+          "description": "Customer reference or transaction code",
+          "maxLength": 120
+        },
+        "discrepancyType": {
+          "type": "string",
+          "description": "Classification of discrepancy",
+          "enum": ["MATCH", "NOTEBOOK_OMISSION", "TRANSCRIPTION_ERROR", "UNVERIFIED_SMS"]
+        },
+        "description": {
+          "type": "string",
+          "description": "Auditor notes and analysis",
+          "maxLength": 500
+        },
+        "recoveredValue": {
+          "type": "number",
+          "description": "Financial value safeguarded or recovered in KES"
+        }
+      },
+      "required": ["notebookAmount", "systemAmount", "discrepancyType", "recoveredValue"]
+    },
+    "GatewayConfig": {
+      "title": "GatewayConfig",
+      "description": "Safaricom Daraja STK Push credentials, shortcode, passkey, and handset targeting",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Config document key (e.g. 'daraja')",
+          "maxLength": 64
+        },
+        "consumerKey": {
+          "type": "string",
+          "description": "Safaricom Daraja API Consumer Key",
+          "maxLength": 200
+        },
+        "consumerSecret": {
+          "type": "string",
+          "description": "Safaricom Daraja API Consumer Secret",
+          "maxLength": 200
+        },
+        "passkey": {
+          "type": "string",
+          "description": "Daraja Lipa na M-Pesa Online Passkey",
+          "maxLength": 200
+        },
+        "shortcode": {
+          "type": "string",
+          "description": "Business Shortcode / Paybill / Till Number",
+          "maxLength": 30
+        },
+        "environment": {
+          "type": "string",
+          "description": "Target Daraja gateway environment",
+          "enum": ["sandbox", "production"]
+        },
+        "myPhoneNumber": {
+          "type": "string",
+          "description": "Merchant phone number targeted for instant STK Push prompts",
+          "maxLength": 30
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when credentials were updated",
+          "maxLength": 60
+        }
+      },
+      "required": ["environment"]
+    },
+    "StkRequest": {
+      "title": "StkRequest",
+      "description": "Logged STK Push dispatch request, checkout ID, and prompt status",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Request document ID",
+          "maxLength": 128
+        },
+        "phone": {
+          "type": "string",
+          "description": "Phone number that was prompted",
+          "maxLength": 30
+        },
+        "amount": {
+          "type": "number",
+          "description": "Amount prompted in KES"
+        },
+        "checkoutRequestId": {
+          "type": "string",
+          "description": "Safaricom Checkout Request ID (ws_CO_...)",
+          "maxLength": 100
+        },
+        "merchantRequestId": {
+          "type": "string",
+          "description": "Safaricom Merchant Request ID",
+          "maxLength": 100
+        },
+        "status": {
+          "type": "string",
+          "description": "STK prompt lifecycle status",
+          "enum": ["DISPATCHED", "WAITING_PIN", "COMPLETED", "FAILED", "CANCELLED"]
+        },
+        "responseDescription": {
+          "type": "string",
+          "description": "Description returned by Safaricom API",
+          "maxLength": 300
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Dispatch timestamp",
+          "maxLength": 60
+        },
+        "isMyPhone": {
+          "type": "boolean",
+          "description": "Whether push was routed to merchant's own mobile device"
+        }
+      },
+      "required": ["phone", "amount", "status", "timestamp"]
+    },
+    "VerificationLog": {
+      "title": "VerificationLog",
+      "description": "Anti-fraud SMS and transaction receipt validation audit log",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Verification audit entry ID",
+          "maxLength": 128
+        },
+        "codeChecked": {
+          "type": "string",
+          "description": "Transaction code or SMS snippet verified",
+          "maxLength": 200
+        },
+        "status": {
+          "type": "string",
+          "description": "Verification outcome",
+          "enum": ["VERIFIED", "ALREADY_REDEEMED", "NOT_FOUND", "SUSPECTED_FAKE"]
+        },
+        "amount": {
+          "type": "number",
+          "description": "Amount found in transaction record (if any)"
+        },
+        "message": {
+          "type": "string",
+          "description": "Verification detail message",
+          "maxLength": 500
+        },
+        "cashierName": {
+          "type": "string",
+          "description": "Cashier or terminal operator",
+          "maxLength": 100
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Timestamp of check",
+          "maxLength": 60
+        }
+      },
+      "required": ["codeChecked", "status", "message", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/businesses/{businessId}": {
+      "schema": "Business",
+      "description": "Merchant business profile and operational configurations"
+    },
+    "/transactions/{transactionId}": {
+      "schema": "Transaction",
+      "description": "Collection of all mobile payment transactions, verification receipts, and status logs"
+    },
+    "/customers/{customerId}": {
+      "schema": "Customer",
+      "description": "Collection of customer profiles, contact numbers, and loyalty reward points"
+    },
+    "/audits/{auditId}": {
+      "schema": "ManualEntryAudit",
+      "description": "Digital ledger versus manual counter notebook audit comparison records"
+    },
+    "/settings/{settingId}": {
+      "schema": "GatewayConfig",
+      "description": "Persistent gateway credentials and system settings stored in the database"
+    },
+    "/stk_requests/{requestId}": {
+      "schema": "StkRequest",
+      "description": "Real-time records of all STK push dispatch requests, checkout IDs, and responses"
+    },
+    "/verifications/{verificationId}": {
+      "schema": "VerificationLog",
+      "description": "Anti-fraud SMS and transaction code checks logged for security auditing"
+    }
+  }
+}

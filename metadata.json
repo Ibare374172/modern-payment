@@ -1,0 +1,6 @@
+{
+  "name": "Mobile Payments in Modern Businesses",
+  "description": "Comprehensive mobile payment processing, real-time transaction verification, digital sales ledger, and business analytics system designed for modern enterprises.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,162 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny all access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'hillary.makedi@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Validation helper for Transactions
+    function isValidTransaction(data) {
+      return data.keys().hasAll(['code', 'amount', 'paymentMethod', 'status', 'timestamp']) &&
+        data.code is string && data.code.size() >= 6 && data.code.size() <= 20 &&
+        data.amount is number && data.amount > 0 && data.amount <= 1000000 &&
+        data.paymentMethod in ['MPESA_EXPRESS', 'MPESA_TILL', 'MPESA_PAYBILL', 'AIRTEL_MONEY', 'QR_PAY', 'CARD'] &&
+        data.status in ['COMPLETED', 'PENDING', 'FAILED', 'REVERSED'] &&
+        data.timestamp is string && data.timestamp.size() <= 60 &&
+        (!('customerPhone' in data) || (data.customerPhone is string && data.customerPhone.size() <= 30)) &&
+        (!('customerName' in data) || (data.customerName is string && data.customerName.size() <= 150)) &&
+        (!('notes' in data) || (data.notes is string && data.notes.size() <= 500)) &&
+        (!('smsReceiptText' in data) || (data.smsReceiptText is string && data.smsReceiptText.size() <= 1000));
+    }
+
+    // Validation helper for Business Profile
+    function isValidBusiness(data) {
+      return data.keys().hasAll(['name', 'tillNumber', 'currency']) &&
+        data.name is string && data.name.size() > 0 && data.name.size() <= 150 &&
+        data.tillNumber is string && data.tillNumber.size() >= 4 && data.tillNumber.size() <= 20 &&
+        data.currency is string && data.currency.size() <= 10 &&
+        (!('dailyTarget' in data) || (data.dailyTarget is number && data.dailyTarget >= 0));
+    }
+
+    // Validation helper for Customer Profile
+    function isValidCustomer(data) {
+      return data.keys().hasAll(['name', 'phone', 'totalSpent', 'loyaltyPoints']) &&
+        data.name is string && data.name.size() > 0 && data.name.size() <= 150 &&
+        data.phone is string && data.phone.size() >= 8 && data.phone.size() <= 30 &&
+        data.totalSpent is number && data.totalSpent >= 0 &&
+        data.loyaltyPoints is number && data.loyaltyPoints >= 0;
+    }
+
+    // Validation helper for Manual Entry Audits
+    function isValidAudit(data) {
+      return data.keys().hasAll(['notebookAmount', 'systemAmount', 'discrepancyType', 'recoveredValue']) &&
+        data.notebookAmount is number && data.notebookAmount >= 0 &&
+        data.systemAmount is number && data.systemAmount >= 0 &&
+        data.recoveredValue is number && data.recoveredValue >= 0 &&
+        data.discrepancyType in ['MATCH', 'NOTEBOOK_OMISSION', 'TRANSCRIPTION_ERROR', 'UNVERIFIED_SMS'];
+    }
+
+    // Validation helper for Gateway Settings
+    function isValidGatewayConfig(data) {
+      return data.keys().hasAll(['environment']) &&
+        data.environment in ['sandbox', 'production'] &&
+        (!('consumerKey' in data) || (data.consumerKey is string && data.consumerKey.size() <= 200)) &&
+        (!('consumerSecret' in data) || (data.consumerSecret is string && data.consumerSecret.size() <= 200)) &&
+        (!('passkey' in data) || (data.passkey is string && data.passkey.size() <= 200)) &&
+        (!('shortcode' in data) || (data.shortcode is string && data.shortcode.size() <= 30)) &&
+        (!('myPhoneNumber' in data) || (data.myPhoneNumber is string && data.myPhoneNumber.size() <= 30));
+    }
+
+    // Validation helper for Stk Requests
+    function isValidStkRequest(data) {
+      return data.keys().hasAll(['phone', 'amount', 'status', 'timestamp']) &&
+        data.phone is string && data.phone.size() >= 8 && data.phone.size() <= 30 &&
+        data.amount is number && data.amount > 0 &&
+        data.status in ['DISPATCHED', 'WAITING_PIN', 'COMPLETED', 'FAILED', 'CANCELLED'] &&
+        data.timestamp is string && data.timestamp.size() <= 60;
+    }
+
+    // Validation helper for Anti-Fraud Verification Logs
+    function isValidVerificationLog(data) {
+      return data.keys().hasAll(['codeChecked', 'status', 'message', 'timestamp']) &&
+        data.codeChecked is string && data.codeChecked.size() <= 200 &&
+        data.status in ['VERIFIED', 'ALREADY_REDEEMED', 'NOT_FOUND', 'SUSPECTED_FAKE'] &&
+        data.message is string && data.message.size() <= 500 &&
+        data.timestamp is string && data.timestamp.size() <= 60;
+    }
+
+    // Match rules for /transactions
+    match /transactions/{transactionId} {
+      allow get, list: if true;
+      allow create: if isValidId(transactionId) && isValidTransaction(incoming());
+      allow update: if isValidId(transactionId) && isValidTransaction(incoming()) && (
+        isAdmin() ||
+        (existing().status != 'COMPLETED' && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'verifiedBy', 'verifiedAt', 'notes']))
+      );
+      allow delete: if isAdmin();
+    }
+
+    // Match rules for /businesses
+    match /businesses/{businessId} {
+      allow get, list: if true;
+      allow create, update: if isValidId(businessId) && isValidBusiness(incoming());
+      allow delete: if isAdmin();
+    }
+
+    // Match rules for /customers
+    match /customers/{customerId} {
+      allow get, list: if true;
+      allow create, update: if isValidId(customerId) && isValidCustomer(incoming());
+      allow delete: if isAdmin();
+    }
+
+    // Match rules for /audits
+    match /audits/{auditId} {
+      allow get, list: if true;
+      allow create, update: if isValidId(auditId) && isValidAudit(incoming());
+      allow delete: if isAdmin();
+    }
+
+    // Match rules for /settings
+    match /settings/{settingId} {
+      allow get, list: if true;
+      allow create, update: if isValidId(settingId) && isValidGatewayConfig(incoming());
+      allow delete: if isAdmin();
+    }
+
+    // Match rules for /stk_requests
+    match /stk_requests/{requestId} {
+      allow get, list: if true;
+      allow create, update: if isValidId(requestId) && isValidStkRequest(incoming());
+      allow delete: if isAdmin();
+    }
+
+    // Match rules for /verifications
+    match /verifications/{verificationId} {
+      allow get, list: if true;
+      allow create, update: if isValidId(verificationId) && isValidVerificationLog(incoming());
+      allow delete: if isAdmin();
+    }
+
+    // Connection validation test document
+    match /test/connection {
+      allow read: if true;
+    }
+  }
+}

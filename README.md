@@ -1,55 +1,47 @@
 # Zawadi Mart – Mobile Payment & Financial Ledger Platform
 
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue.svg)](https://www.typescriptlang.org/)
-[![React](https://img.shields.io/badge/React-19.0-61dafb.svg)](https://react.dev/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind-v4.1-38bdf8.svg)](https://tailwindcss.com/)
-[![Express](https://img.shields.io/badge/Express-4.21-000000.svg)](https://expressjs.com/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791.svg)](https://www.postgresql.org/)
-[![Drizzle ORM](https://img.shields.io/badge/Drizzle_ORM-0.38-C5F74F.svg)](https://orm.drizzle.team/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-
 An enterprise-grade, full-stack mobile payments and reconciliation system designed for retail environments and Kenyan SMEs. The platform combines real-time M-Pesa Daraja STK Push prompt processing, Till QR checkouts, paper exercise book audit reconciliation, dual-layer PostgreSQL (Drizzle ORM) and Cloud Firestore persistence, and an academic Technology Acceptance Model (TAM) research simulator.
 
 ---
 
-## 👨‍💻 Author
+##  Author
 
 **Dennis Njuguna**  
 *Lead Software Engineer & Researcher*
 
 ---
 
-## 🌟 Key Capabilities & Workspaces
+##  Key Capabilities & Workspaces
 
 The platform enforces **strict role-based session isolation** across four dedicated workspaces:
 
-### 1. 🛒 Cashier Station (Front-Counter POS)
+### 1.  Cashier Station (Front-Counter POS)
 - **Point of Sale Terminal**: Instant shopping cart checkout with dynamic total calculation and tax breakdown.
 - **M-Pesa STK Push Dispatch**: Push instant USSD PIN prompts directly to customer mobile handsets via Safaricom Daraja API.
 - **Dynamic Till QR Checkouts**: Real-time QR code display for Till `842109` and Paybill `522522`.
 - **Anti-Fraud SMS Verification**: Verify customer MPesa SMS codes against the internal cryptographic ledger to eliminate falsified receipt fraud.
 - **Shift Drawer Register**: Reconcile expected cash/mobile balances at shift end.
 
-### 2. 📊 Store Manager Portal (Executive Oversight)
+### 2.  Store Manager Portal (Executive Oversight)
 - **Live Revenue Telemetry**: Hourly sales velocity, target tracking, and payment method distribution charts.
 - **Counter Book Reconciliation**: Dual-audit ledger comparing handwritten counter log amounts against M-Pesa digital SMS receipts to capture unrecorded sales and transcription errors.
 - **Business & Till Configuration**: Edit Till Number, Paybill Number, store branch, and daily revenue targets.
 - **Daraja Gateway Settings**: Switch between Safaricom Sandbox and Production environments with live credentials.
 - **Real-Time PostgreSQL Console**: Live Change Data Capture (CDC) event feed and relational database schema inspector.
 
-### 3. 📱 Customer Portal (Personal Mobile Wallet)
+### 3.  Customer Portal (Personal Mobile Wallet)
 - **Interactive Handset Wallet**: Personal balance management, top-ups, and one-tap checkout payments.
 - **Loyalty Program**: Real-time points accumulation across reward tiers (`BRONZE`, `SILVER`, `GOLD`, `PLATINUM`).
 - **Electronic Thermal Receipts**: Detailed receipt view, PDF download, and print-ready transaction slips.
 
-### 4. 🔬 Academic Research Hub (TAM & SME Study)
+### 4.  Academic Research Hub (TAM & SME Study)
 - **Technology Acceptance Model (TAM) Simulator**: Interactive sliders evaluating Perceived Usefulness (PU), Perceived Ease of Use (PEOU), Security Trust, and Cost Affordability.
 - **Empirical Field Findings**: Longitudinal research survey data analyzing 120 Kenyan SMEs.
 - **Thesis Documentation**: Integrated academic reference covering Chapters 1 through 5.
 
 ---
 
-## 🛠️ Technology Stack
+##  Technology Stack
 
 | Layer | Technologies |
 |---|---|
@@ -64,7 +56,7 @@ The platform enforces **strict role-based session isolation** across four dedica
 
 ---
 
-## 🗄️ PostgreSQL Database Models (`src/db/schema.ts`)
+##  PostgreSQL Database Models (`src/db/schema.ts`)
 
 The relational schema is defined using **Drizzle ORM** with full TypeScript type safety:
 
@@ -78,7 +70,7 @@ The relational schema is defined using **Drizzle ORM** with full TypeScript type
 
 ---
 
-## 🚀 Getting Started
+##  Getting Started
 
 ### Prerequisites
 
@@ -137,7 +129,7 @@ http://localhost:3000
 
 ---
 
-## 📦 Scripts Reference
+##  Scripts Reference
 
 | Command | Description |
 |---|---|
@@ -175,7 +167,7 @@ http://localhost:3000
 
 ---
 
-## 🔒 Security & Access Guardrails
+##  Security & Access Guardrails
 
 - **Strict Session Locking**: Once authenticated as Cashier, Manager, Customer, or Researcher, cross-role switching is disabled in the UI and enforced at the API layer. To change accounts, the user must explicitly sign out.
 - **Anti-Fraud Verification**: Automatic verification matches incoming SMS receipts against Safaricom reference formats to prevent customer code falsification.
@@ -183,7 +175,7 @@ http://localhost:3000
 
 ---
 
-## 📄 License
+##  License
 
 This project is licensed under the **MIT License**.
 

@@ -21,6 +21,12 @@ import {
   UserProfile 
 } from '../types';
 import { initialBusiness, initialCustomers, initialTransactions, initialAudits } from '../utils/mockData';
+import { 
+  syncTransactionToPostgres, 
+  syncCustomerToPostgres, 
+  syncAuditToPostgres, 
+  syncBusinessToPostgres 
+} from './realtimePostgres';
 
 export const COLLECTIONS = {
   TRANSACTIONS: 'transactions',
@@ -251,6 +257,8 @@ export async function saveTransactionToDb(txn: Transaction): Promise<void> {
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, path);
   }
+  // Asynchronously replicate to PostgreSQL and broadcast real-time SSE event
+  syncTransactionToPostgres(txn).catch(e => console.warn('Postgres txn sync note:', e));
 }
 
 export async function saveCustomerToDb(customer: Customer): Promise<void> {
@@ -260,6 +268,7 @@ export async function saveCustomerToDb(customer: Customer): Promise<void> {
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, path);
   }
+  syncCustomerToPostgres(customer).catch(e => console.warn('Postgres customer sync note:', e));
 }
 
 export async function saveAuditToDb(audit: ManualEntryAudit): Promise<void> {
@@ -269,6 +278,7 @@ export async function saveAuditToDb(audit: ManualEntryAudit): Promise<void> {
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, path);
   }
+  syncAuditToPostgres(audit).catch(e => console.warn('Postgres audit sync note:', e));
 }
 
 export async function saveBusinessToDb(biz: BusinessProfile): Promise<void> {
@@ -278,6 +288,7 @@ export async function saveBusinessToDb(biz: BusinessProfile): Promise<void> {
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, path);
   }
+  syncBusinessToPostgres(biz).catch(e => console.warn('Postgres biz sync note:', e));
 }
 
 export async function saveUserProfileToDb(profile: UserProfile): Promise<void> {

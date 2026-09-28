@@ -149,6 +149,7 @@ export const Header: React.FC<HeaderProps> = ({
           { id: 'dashboard', label: 'Executive Analytics', icon: BarChart3 },
           { id: 'audits', label: 'Reconciliation Audit', icon: FileSpreadsheet, badge: 'Book vs SMS' },
           { id: 'transactions', label: 'All Store Transactions', icon: Receipt, badge: `${todayCount}` },
+          { id: 'postgres', label: 'PostgreSQL Real-Time', icon: Database, badge: 'Live SQL' },
           { id: 'settings', label: 'Business & Till Settings', icon: Settings },
           { id: 'gateway', label: 'Daraja STK Gateway', icon: Zap, badge: 'API' },
         ];
@@ -163,6 +164,7 @@ export const Header: React.FC<HeaderProps> = ({
         return [
           { id: 'simulator', label: 'TAM Adoption Simulator', icon: Sliders, badge: 'Interactive' },
           { id: 'empirical', label: 'Empirical Audit Findings', icon: FileSpreadsheet },
+          { id: 'postgres', label: 'PostgreSQL Relational Models', icon: Database, badge: 'Drizzle' },
           { id: 'chapters', label: 'Thesis Chapters 1 – 5', icon: BookOpenCheck, badge: 'Full Study' },
           { id: 'survey', label: 'SME Survey Demographics', icon: Users, badge: '120 SMEs' },
         ];

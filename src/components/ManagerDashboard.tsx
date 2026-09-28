@@ -29,6 +29,7 @@ import { saveAuditToDb, saveBusinessToDb } from '../services/dbService';
 import { sounds } from '../utils/audio';
 
 import { TransactionHistory } from './TransactionHistory';
+import { PostgresRealtimeConsole } from './PostgresRealtimeConsole';
 import { Zap } from 'lucide-react';
 
 interface ManagerDashboardProps {
@@ -163,6 +164,14 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({
     return (
       <div className="space-y-4">
         <TransactionHistory transactions={transactions} onViewReceipt={onViewReceipt} />
+      </div>
+    );
+  }
+
+  if (activeSubTab === 'postgres') {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <PostgresRealtimeConsole />
       </div>
     );
   }

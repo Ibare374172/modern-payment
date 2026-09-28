@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { studyBreakdown } from '../utils/mockData';
+import { PostgresRealtimeConsole } from './PostgresRealtimeConsole';
 import { 
   BookOpen, 
   GraduationCap, 
@@ -62,6 +63,14 @@ export const ResearchExplorer: React.FC<ResearchExplorerProps> = ({
   );
 
   const [activeChapter, setActiveChapter] = useState<number>(1);
+
+  if (externalSubTab === 'postgres') {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <PostgresRealtimeConsole />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">

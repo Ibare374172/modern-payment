@@ -1,6 +1,7 @@
 import express, { Express } from 'express';
 import { stkRouter } from './routes/stkRoutes';
 import { darajaRouter } from './routes/darajaRoutes';
+import { postgresRouter } from './routes/postgresRoutes';
 import { errorHandler, requestLogger } from './middleware/errorHandler';
 
 /**
@@ -18,6 +19,7 @@ export function createBackendApp(): Express {
     res.json({
       status: 'UP',
       service: 'Zawadi Mart Mobile Payment & Daraja Gateway API',
+      postgres: 'Active (Drizzle ORM + Real-time SSE Stream)',
       timestamp: new Date().toISOString(),
     });
   });
@@ -25,6 +27,7 @@ export function createBackendApp(): Express {
   // Mount API modules
   app.use('/api/stkpush', stkRouter);
   app.use('/api/daraja', darajaRouter);
+  app.use('/api/postgres', postgresRouter);
 
   // Global Error Handler
   app.use(errorHandler);

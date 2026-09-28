@@ -1,5 +1,6 @@
 import { saveGatewayConfigToDb, saveStkRequestToDb } from './dbService';
 import { GatewayConfig, StkRequest } from '../types';
+import { ApiClient, BackendStkPushResponse } from './apiClient';
 
 export type DarajaConfig = GatewayConfig;
 
@@ -45,18 +46,7 @@ export async function saveDarajaConfig(config: DarajaConfig): Promise<void> {
   }
 }
 
-export interface StkPushResponse {
-  success: boolean;
-  mode?: 'DARAJA_LIVE' | 'GATEWAY_SIMULATED';
-  phone?: string;
-  amount?: number;
-  checkoutRequestId?: string;
-  merchantRequestId?: string;
-  message?: string;
-  error?: string;
-  requiresCredentials?: boolean;
-  darajaResponse?: unknown;
-}
+export type StkPushResponse = BackendStkPushResponse;
 
 export async function sendStkPushRequest(params: {
   phone: string;
@@ -71,28 +61,20 @@ export async function sendStkPushRequest(params: {
   const requestId = `STK-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
   try {
-    const response = await fetch('/api/stkpush', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        phone: params.phone,
-        amount: params.amount,
-        accountReference: params.accountReference || 'ZawadiMart',
-        transactionDesc: params.transactionDesc || 'Goods Payment',
-        consumerKey: config.consumerKey,
-        consumerSecret: config.consumerSecret,
-        passkey: config.passkey || (config.shortcode === '174379' || !config.shortcode ? 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919' : ''),
-        shortcode: config.shortcode || '174379',
-        environment: config.environment || 'sandbox',
-        forceSimulate: params.forceSimulate || false,
-      }),
+    const data = await ApiClient.dispatchStkPush({
+      phone: params.phone,
+      amount: params.amount,
+      accountReference: params.accountReference || 'ZawadiMart',
+      transactionDesc: params.transactionDesc || 'Goods Payment',
+      consumerKey: config.consumerKey,
+      consumerSecret: config.consumerSecret,
+      passkey: config.passkey || (config.shortcode === '174379' || !config.shortcode ? 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919' : ''),
+      shortcode: config.shortcode || '174379',
+      environment: config.environment || 'sandbox',
+      forceSimulate: params.forceSimulate || false,
     });
 
-    const data = await response.json();
-
-    if (!response.ok) {
+    if (!data.success) {
       // Record failed request in database
       const failedReq: StkRequest = {
         id: requestId,
@@ -105,31 +87,24 @@ export async function sendStkPushRequest(params: {
       };
       saveStkRequestToDb(failedReq).catch(console.warn);
 
-      return {
-        success: false,
-        requiresCredentials: data.requiresCredentials,
-        error: data.error || 'Failed to dispatch STK push.',
-        darajaResponse: data.darajaResponse,
-      };
+      return data;
     }
-
-    const successRes = data as StkPushResponse;
 
     // Record successful STK dispatch in database
     const reqRecord: StkRequest = {
       id: requestId,
       phone: params.phone,
       amount: params.amount,
-      checkoutRequestId: successRes.checkoutRequestId,
-      merchantRequestId: successRes.merchantRequestId,
+      checkoutRequestId: data.checkoutRequestId,
+      merchantRequestId: data.merchantRequestId,
       status: 'WAITING_PIN',
-      responseDescription: successRes.message || 'Prompt sent to handset. Waiting for PIN.',
+      responseDescription: data.message || 'Prompt sent to handset. Waiting for PIN.',
       timestamp: new Date().toISOString(),
       isMyPhone: params.isMyPhone ?? false,
     };
     saveStkRequestToDb(reqRecord).catch(console.warn);
 
-    return successRes;
+    return data;
   } catch (err) {
     const errRecord: StkRequest = {
       id: requestId,
@@ -151,19 +126,11 @@ export async function sendStkPushRequest(params: {
 
 export async function testDarajaCredentials(config: DarajaConfig): Promise<{ valid: boolean; message?: string; error?: string }> {
   try {
-    const response = await fetch('/api/daraja/test', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        consumerKey: config.consumerKey,
-        consumerSecret: config.consumerSecret,
-        environment: config.environment || 'sandbox',
-      }),
+    return await ApiClient.testDaraja({
+      consumerKey: config.consumerKey || '',
+      consumerSecret: config.consumerSecret || '',
+      environment: config.environment || 'sandbox',
     });
-
-    return await response.json();
   } catch (err) {
     return {
       valid: false,

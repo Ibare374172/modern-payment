@@ -20,7 +20,9 @@ import {
   Sliders,
   FileSpreadsheet,
   Settings,
-  Gift
+  Gift,
+  Info,
+  Lock
 } from 'lucide-react';
 import { sounds } from '../utils/audio';
 import { User } from 'firebase/auth';
@@ -49,6 +51,7 @@ interface HeaderProps {
   onLogin: () => void;
   onLogout: () => void;
   onOpenDarajaConfig?: () => void;
+  onOpenAboutWebsite?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -69,6 +72,7 @@ export const Header: React.FC<HeaderProps> = ({
   onLogin,
   onLogout,
   onOpenDarajaConfig,
+  onOpenAboutWebsite,
 }) => {
   const toggleSound = () => {
     const next = !soundEnabled;
@@ -215,7 +219,11 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               onClick={onOpenAccountSwitcher}
               id="switch-account-modal-btn"
-              title="Click to switch between Cashier, Manager, Customer, and Researcher accounts"
+              title={
+                sessionUser
+                  ? `${accountInfo.roleLabel} Session: Locked to authenticated account (switching restricted)`
+                  : 'Click to switch between Cashier, Manager, Customer, and Researcher accounts'
+              }
               className={`flex items-center gap-2.5 p-1.5 pr-3 rounded-2xl border transition-all text-left group shadow-xs hover:shadow-sm ${accountInfo.bgBadge}`}
             >
               <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs shadow-2xs ${accountInfo.avatarBg}`}>
@@ -226,9 +234,16 @@ export const Header: React.FC<HeaderProps> = ({
                   <span className="text-[10px] font-bold uppercase tracking-wider opacity-80">
                     {accountInfo.roleLabel}
                   </span>
-                  <span className="text-[9px] bg-stone-900/10 px-1 py-0.2 rounded font-medium">
-                    Active
-                  </span>
+                  {sessionUser ? (
+                    <span className="text-[9px] bg-stone-900/10 text-stone-800 px-1 py-0.2 rounded font-medium flex items-center gap-0.5">
+                      <Lock className="w-2.5 h-2.5 text-stone-700" />
+                      Locked
+                    </span>
+                  ) : (
+                    <span className="text-[9px] bg-stone-900/10 px-1 py-0.2 rounded font-medium">
+                      Demo
+                    </span>
+                  )}
                 </div>
                 <div className="text-xs font-bold text-stone-900 flex items-center gap-1">
                   <span>{accountInfo.name}</span>
@@ -237,34 +252,83 @@ export const Header: React.FC<HeaderProps> = ({
               </div>
             </button>
 
-            {/* Quick 1-Click Role Switcher */}
-            <div className="flex items-center bg-stone-100 p-1 rounded-xl border border-stone-200">
-              {(['CASHIER', 'MANAGER', 'CUSTOMER', 'RESEARCHER'] as UserRole[]).map(role => {
-                const isSelected = activeRole === role;
-                const label = role === 'CASHIER' ? 'Cashier' : role === 'MANAGER' ? 'Manager' : role === 'CUSTOMER' ? 'Customer' : 'Research';
-                return (
-                  <button
-                    key={role}
-                    id={`quick-switch-${role.toLowerCase()}`}
-                    onClick={() => {
-                      sounds.playClick();
-                      setActiveRole(role);
-                      if (role === 'CASHIER') setActiveSubTab('pos');
-                      else if (role === 'MANAGER') setActiveSubTab('dashboard');
-                      else if (role === 'CUSTOMER') setActiveSubTab('wallet');
-                      else if (role === 'RESEARCHER') setActiveSubTab('simulator');
-                    }}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
-                      isSelected
-                        ? 'bg-white text-stone-950 shadow-xs border border-stone-200'
-                        : 'text-stone-600 hover:text-stone-900'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
+            {/* Quick Role Switcher or Locked Session Badge */}
+            {sessionUser ? (
+              <div 
+                id="role-locked-session-badge"
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs shadow-2xs ${
+                  sessionUser.role === 'CASHIER'
+                    ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                    : sessionUser.role === 'MANAGER'
+                    ? 'bg-indigo-50 border-indigo-200 text-indigo-900'
+                    : sessionUser.role === 'CUSTOMER'
+                    ? 'bg-sky-50 border-sky-200 text-sky-900'
+                    : 'bg-amber-50 border-amber-200 text-amber-900'
+                }`}
+                title={`Security Policy: Authenticated as ${sessionUser.role}. Account switching to other roles is disabled.`}
+              >
+                <Lock className={`w-3.5 h-3.5 ${
+                  sessionUser.role === 'CASHIER'
+                    ? 'text-emerald-700'
+                    : sessionUser.role === 'MANAGER'
+                    ? 'text-indigo-700'
+                    : sessionUser.role === 'CUSTOMER'
+                    ? 'text-sky-700'
+                    : 'text-amber-700'
+                }`} />
+                <span className="font-bold">
+                  {sessionUser.role === 'CASHIER' && 'Cashier Station'}
+                  {sessionUser.role === 'MANAGER' && 'Manager Portal'}
+                  {sessionUser.role === 'CUSTOMER' && 'Customer Wallet'}
+                  {sessionUser.role === 'RESEARCHER' && 'Academic Sandbox'}
+                </span>
+                <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-bold ${
+                  sessionUser.role === 'CASHIER'
+                    ? 'bg-emerald-200/80 text-emerald-800'
+                    : sessionUser.role === 'MANAGER'
+                    ? 'bg-indigo-200/80 text-indigo-800'
+                    : sessionUser.role === 'CUSTOMER'
+                    ? 'bg-sky-200/80 text-sky-800'
+                    : 'bg-amber-200/80 text-amber-800'
+                }`}>
+                  {sessionUser.role === 'CASHIER' && `Till #${business.tillNumber}`}
+                  {sessionUser.role === 'MANAGER' && 'Executive'}
+                  {sessionUser.role === 'CUSTOMER' && 'Personal'}
+                  {sessionUser.role === 'RESEARCHER' && 'Research'}
+                </span>
+                <span className="text-[10px] text-stone-500 font-medium hidden md:inline ml-1 border-l border-stone-300 pl-2">
+                  Session Locked
+                </span>
+              </div>
+            ) : (
+              <div className="flex items-center bg-stone-100 p-1 rounded-xl border border-stone-200">
+                {(['CASHIER', 'MANAGER', 'CUSTOMER', 'RESEARCHER'] as UserRole[]).map(role => {
+                  const isSelected = activeRole === role;
+                  const label = role === 'CASHIER' ? 'Cashier' : role === 'MANAGER' ? 'Manager' : role === 'CUSTOMER' ? 'Customer' : 'Research';
+                  return (
+                    <button
+                      key={role}
+                      id={`quick-switch-${role.toLowerCase()}`}
+                      onClick={() => {
+                        sounds.playClick();
+                        setActiveRole(role);
+                        if (role === 'CASHIER') setActiveSubTab('pos');
+                        else if (role === 'MANAGER') setActiveSubTab('dashboard');
+                        else if (role === 'CUSTOMER') setActiveSubTab('wallet');
+                        else if (role === 'RESEARCHER') setActiveSubTab('simulator');
+                      }}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                        isSelected
+                          ? 'bg-white text-stone-950 shadow-xs border border-stone-200'
+                          : 'text-stone-600 hover:text-stone-900'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
 
             {/* Audio Toggle */}
             <button
@@ -279,6 +343,22 @@ export const Header: React.FC<HeaderProps> = ({
             >
               {soundEnabled ? <Volume2 className="w-4 h-4 text-emerald-600" /> : <VolumeX className="w-4 h-4 text-stone-400" />}
             </button>
+
+            {/* About Website Description Dialog Trigger */}
+            {onOpenAboutWebsite && (
+              <button
+                onClick={() => {
+                  sounds.playClick();
+                  onOpenAboutWebsite();
+                }}
+                id="about-website-btn"
+                title="System Overview & Architecture Description"
+                className="p-2 rounded-xl border border-stone-200 bg-stone-50 hover:bg-stone-100 text-stone-700 text-xs font-medium flex items-center gap-1.5 transition-colors shadow-2xs"
+              >
+                <Info className="w-4 h-4 text-indigo-600" />
+                <span className="hidden lg:inline text-xs font-semibold">About System</span>
+              </button>
+            )}
 
             {/* Auth Pill */}
             {(currentUser || sessionUser) ? (

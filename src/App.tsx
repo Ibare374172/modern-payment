@@ -46,6 +46,7 @@ import { AuthGateway } from './components/AuthGateway';
 import { StkPushModal } from './components/StkPushModal';
 import { ReceiptModal } from './components/ReceiptModal';
 import { DarajaConfigModal } from './components/DarajaConfigModal';
+import { AboutWebsiteModal } from './components/AboutWebsiteModal';
 import { sounds } from './utils/audio';
 
 export default function App() {
@@ -96,6 +97,7 @@ export default function App() {
   // Modal States
   const [activeReceiptTxn, setActiveReceiptTxn] = useState<Transaction | null>(null);
   const [isDarajaModalOpen, setIsDarajaModalOpen] = useState<boolean>(false);
+  const [isAboutModalOpen, setIsAboutModalOpen] = useState<boolean>(false);
   const [stkModalData, setStkModalData] = useState<{
     isOpen: boolean;
     phone: string;
@@ -293,6 +295,12 @@ export default function App() {
 
   // Role Switcher Handler (Ensures proper default subtab for each separated account)
   const handleSelectRole = (role: UserRole) => {
+    // Security Policy: Any logged-in account (Cashier, Manager, Customer, Researcher) cannot switch to other accounts
+    if (sessionUser && sessionUser.role !== role) {
+      sounds.playWarning();
+      return;
+    }
+
     setActiveRole(role);
     if (role === 'CASHIER') {
       setActiveSubTab('pos');
@@ -307,8 +315,38 @@ export default function App() {
 
   // Customer Account Switcher & Creation
   const handleSelectCustomer = (cust: Customer) => {
+    if (sessionUser && sessionUser.role !== 'CUSTOMER') {
+      sounds.playWarning();
+      return;
+    }
     setActiveCustomerId(cust.id);
   };
+
+  // Staff Account Switcher
+  const handleSelectStaffAccount = (acc: StaffAccount) => {
+    if (sessionUser && acc.role !== sessionUser.role) {
+      sounds.playWarning();
+      return;
+    }
+    setActiveStaffAccount(acc);
+  };
+
+  // Enforce session lockdown: when user is logged in as Cashier, Manager, Customer, or Researcher,
+  // keep activeRole strictly at sessionUser.role
+  useEffect(() => {
+    if (sessionUser && activeRole !== sessionUser.role) {
+      setActiveRole(sessionUser.role);
+      if (sessionUser.role === 'CASHIER') {
+        setActiveSubTab('pos');
+      } else if (sessionUser.role === 'MANAGER') {
+        setActiveSubTab('dashboard');
+      } else if (sessionUser.role === 'CUSTOMER') {
+        setActiveSubTab('wallet');
+      } else if (sessionUser.role === 'RESEARCHER') {
+        setActiveSubTab('simulator');
+      }
+    }
+  }, [sessionUser, activeRole]);
 
   const handleAddNewCustomer = async (newCust: Customer) => {
     setCustomers(prev => [newCust, ...prev]);
@@ -513,6 +551,7 @@ export default function App() {
         onLogin={handleLogin}
         onLogout={handleLogout}
         onOpenDarajaConfig={() => setIsDarajaModalOpen(true)}
+        onOpenAboutWebsite={() => setIsAboutModalOpen(true)}
       />
 
       {/* Main Workspace Area (Cleanly separated for each account) */}
@@ -580,10 +619,13 @@ export default function App() {
         onSelectRole={handleSelectRole}
         staffAccounts={staffAccounts}
         activeStaffAccount={activeStaffAccount}
-        onSelectStaffAccount={(acc) => setActiveStaffAccount(acc)}
+        onSelectStaffAccount={handleSelectStaffAccount}
         customers={customers}
         activeCustomer={activeCustomer}
         onSelectCustomer={handleSelectCustomer}
+        sessionRole={sessionUser?.role}
+        sessionUser={sessionUser}
+        onLogout={handleLogout}
       />
 
       {/* STK Push Phone Simulation & Real Handset Modal */}
@@ -613,6 +655,13 @@ export default function App() {
         onClose={handleCloseReceipt}
         transaction={activeReceiptTxn}
         business={business}
+      />
+
+      {/* Website & Architecture Description Modal */}
+      <AboutWebsiteModal
+        isOpen={isAboutModalOpen}
+        onClose={() => setIsAboutModalOpen(false)}
+        onOpenDarajaConfig={() => setIsDarajaModalOpen(true)}
       />
 
       {/* System Footer */}

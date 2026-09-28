@@ -12,6 +12,39 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <script>
+      // Suppress noisy third-party extension connection errors (e.g. MetaMask in sandboxed iframes)
+      window.addEventListener('unhandledrejection', function(event) {
+        var reason = event.reason;
+        var msg = (typeof reason === 'string' ? reason : (reason && reason.message) || '') + '';
+        if (
+          msg.indexOf('MetaMask') !== -1 ||
+          msg.indexOf('metamask') !== -1 ||
+          msg.indexOf('ethereum') !== -1 ||
+          msg.indexOf('chrome-extension://') !== -1 ||
+          msg.indexOf('Failed to connect to MetaMask') !== -1
+        ) {
+          event.preventDefault();
+          if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+          console.warn('[Extension Notice] Suppressed browser extension rejection:', msg);
+        }
+      });
+      window.addEventListener('error', function(event) {
+        var msg = (event.message || '') + '';
+        var filename = (event.filename || '') + '';
+        if (
+          msg.indexOf('MetaMask') !== -1 ||
+          msg.indexOf('metamask') !== -1 ||
+          msg.indexOf('ethereum') !== -1 ||
+          filename.indexOf('chrome-extension://') !== -1 ||
+          msg.indexOf('Failed to connect to MetaMask') !== -1
+        ) {
+          event.preventDefault();
+          if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+          console.warn('[Extension Notice] Suppressed browser extension error:', msg);
+        }
+      });
+    </script>
   </head>
   <body>
     <div id="root"></div>

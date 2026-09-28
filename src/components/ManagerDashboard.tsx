@@ -28,22 +28,31 @@ import { recordAuditComparison } from '../utils/storage';
 import { saveAuditToDb, saveBusinessToDb } from '../services/dbService';
 import { sounds } from '../utils/audio';
 
+import { TransactionHistory } from './TransactionHistory';
+import { Zap } from 'lucide-react';
+
 interface ManagerDashboardProps {
   business: BusinessProfile;
   transactions: Transaction[];
   audits: ManualEntryAudit[];
+  activeSubTab?: string;
+  setActiveSubTab?: (tab: string) => void;
   onRefreshAudits: () => void;
   onViewReceipt: (txn: Transaction) => void;
   onUpdateBusiness?: (biz: BusinessProfile) => void;
+  onOpenDarajaConfig?: () => void;
 }
 
 export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({
   business,
   transactions,
   audits,
+  activeSubTab = 'dashboard',
+  setActiveSubTab,
   onRefreshAudits,
   onViewReceipt,
   onUpdateBusiness,
+  onOpenDarajaConfig,
 }) => {
   // New Audit Entry Form State
   const [showAddAudit, setShowAddAudit] = useState(false);
@@ -149,6 +158,85 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({
     link.click();
     document.body.removeChild(link);
   };
+
+  if (activeSubTab === 'transactions') {
+    return (
+      <div className="space-y-4">
+        <TransactionHistory transactions={transactions} onViewReceipt={onViewReceipt} />
+      </div>
+    );
+  }
+
+  if (activeSubTab === 'gateway') {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
+        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200 shadow-xs space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-stone-100">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold">
+                <Zap className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-stone-900">
+                  Safaricom Daraja API Gateway Switch
+                </h3>
+                <p className="text-xs text-stone-500">
+                  Direct REST API integration for STK push prompts, instant payment notifications, and till callbacks.
+                </p>
+              </div>
+            </div>
+
+            {onOpenDarajaConfig && (
+              <button
+                onClick={onOpenDarajaConfig}
+                className="px-5 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-2 shadow-xs transition-colors"
+              >
+                <Zap className="w-4 h-4" />
+                <span>Configure Gateway Keys</span>
+              </button>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+            <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200">
+              <span className="text-[10px] text-stone-400 uppercase font-bold block">Status</span>
+              <span className="text-emerald-700 font-bold text-sm flex items-center gap-1.5 mt-1">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                Active Gateway
+              </span>
+              <p className="text-[11px] text-stone-500 mt-1">Listening on Safaricom C2B/STK endpoints</p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200">
+              <span className="text-[10px] text-stone-400 uppercase font-bold block">Default Shortcode</span>
+              <span className="font-mono font-bold text-stone-900 text-sm mt-1 block">
+                {business.tillNumber}
+              </span>
+              <p className="text-[11px] text-stone-500 mt-1">Zawadi Mart Buy Goods Till</p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200">
+              <span className="text-[10px] text-stone-400 uppercase font-bold block">Paybill Number</span>
+              <span className="font-mono font-bold text-stone-900 text-sm mt-1 block">
+                {business.paybillNumber}
+              </span>
+              <p className="text-[11px] text-stone-500 mt-1">Account: {business.accountRef}</p>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-950 flex items-start gap-3">
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+            <div>
+              <strong className="block font-bold">Real Handset STK Testing Supported</strong>
+              <p className="mt-0.5 text-emerald-800">
+                You can push real M-Pesa STK prompts to physical Safaricom numbers in Kenya (or use simulated sandbox responses) via the gateway settings panel.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">

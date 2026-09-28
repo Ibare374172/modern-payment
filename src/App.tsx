@@ -5,7 +5,8 @@ import {
   Customer, 
   ManualEntryAudit, 
   UserRole,
-  PaymentMethod 
+  PaymentMethod,
+  StaffAccount 
 } from './types';
 import { 
   getStoredTransactions, 
@@ -14,6 +15,7 @@ import {
   getStoredCustomers, 
   getStoredAudits,
 } from './utils/storage';
+import { initialStaffAccounts } from './utils/mockData';
 import { 
   testConnection, 
   auth, 
@@ -31,35 +33,62 @@ import {
   subscribeToGatewayConfig,
   saveTransactionToDb,
   saveCustomerToDb,
-  saveAuditToDb,
   saveBusinessToDb,
 } from './services/dbService';
 import { setCachedDarajaConfig } from './services/stkService';
 import { Header } from './components/Header';
 import { CashierTerminal } from './components/CashierTerminal';
 import { ManagerDashboard } from './components/ManagerDashboard';
-import { TransactionHistory } from './components/TransactionHistory';
 import { CustomerPortal } from './components/CustomerPortal';
 import { ResearchExplorer } from './components/ResearchExplorer';
+import { AccountSwitcherModal } from './components/AccountSwitcherModal';
+import { AuthGateway } from './components/AuthGateway';
 import { StkPushModal } from './components/StkPushModal';
 import { ReceiptModal } from './components/ReceiptModal';
 import { DarajaConfigModal } from './components/DarajaConfigModal';
 import { sounds } from './utils/audio';
 
 export default function App() {
-  // Navigation & Role State
-  const [activeTab, setActiveTab] = useState<'cashier' | 'dashboard' | 'transactions' | 'customer' | 'research'>('cashier');
-  const [activeRole, setActiveRole] = useState<UserRole>('CASHIER');
+  // Session & Authentication State (Must log in or register before using the systems)
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [sessionUser, setSessionUser] = useState<{
+    uid: string;
+    email: string;
+    displayName: string;
+    role: UserRole;
+    phone?: string;
+  } | null>(() => {
+    try {
+      const saved = localStorage.getItem('mp_user_session_v1');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  // Operational Workspace & Role State
+  const [activeRole, setActiveRole] = useState<UserRole>(sessionUser?.role || 'CASHIER');
+  const [activeSubTab, setActiveSubTab] = useState<string>(
+    sessionUser?.role === 'MANAGER' ? 'dashboard' : sessionUser?.role === 'CUSTOMER' ? 'wallet' : sessionUser?.role === 'RESEARCHER' ? 'simulator' : 'pos'
+  );
+
+  // Multi-Account Profiles State
+  const [staffAccounts, setStaffAccounts] = useState<StaffAccount[]>(initialStaffAccounts);
+  const [activeStaffAccount, setActiveStaffAccount] = useState<StaffAccount>(initialStaffAccounts[0]);
+  const [isAccountSwitcherOpen, setIsAccountSwitcherOpen] = useState<boolean>(false);
 
   // Persistence State
   const [business, setBusiness] = useState<BusinessProfile>(getStoredBusiness());
   const [transactions, setTransactions] = useState<Transaction[]>(getStoredTransactions());
   const [customers, setCustomers] = useState<Customer[]>(getStoredCustomers());
   const [audits, setAudits] = useState<ManualEntryAudit[]>(getStoredAudits());
+  const [activeCustomerId, setActiveCustomerId] = useState<string>(customers[0]?.id || 'CUST-01');
 
-  // Database Connection & Auth State
+  // Currently Active Customer
+  const activeCustomer = customers.find(c => c.id === activeCustomerId) || customers[0];
+
+  // Database Connection State
   const [dbConnected, setDbConnected] = useState<boolean>(false);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   // Audio Preference
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -100,6 +129,21 @@ export default function App() {
     // 2. Track Firebase Auth state
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
+      if (user && !sessionUser) {
+        const role: UserRole = user.email === 'hillary.makedi@gmail.com' ? 'CUSTOMER' : 'CASHIER';
+        const session = {
+          uid: user.uid,
+          email: user.email || 'user@mpesa.ke',
+          displayName: user.displayName || user.email?.split('@')[0] || 'Authorized User',
+          role,
+        };
+        setSessionUser(session);
+        try {
+          localStorage.setItem('mp_user_session_v1', JSON.stringify(session));
+        } catch {
+          // Ignore
+        }
+      }
     });
 
     // 3. Seed initial records if empty
@@ -151,12 +195,74 @@ export default function App() {
     await saveBusinessToDb(updatedBiz);
   };
 
+  const handleUserAuthenticated = (user: {
+    uid: string;
+    email: string;
+    displayName: string;
+    role: UserRole;
+    phone?: string;
+  }) => {
+    setSessionUser(user);
+    try {
+      localStorage.setItem('mp_user_session_v1', JSON.stringify(user));
+    } catch {
+      // Ignore
+    }
+
+    // Set role & default subtab
+    handleSelectRole(user.role);
+
+    // If customer, ensure customer profile is registered & selected
+    if (user.role === 'CUSTOMER') {
+      const existing = customers.find(c => c.email === user.email || c.name.toLowerCase() === user.displayName.toLowerCase());
+      if (existing) {
+        setActiveCustomerId(existing.id);
+      } else {
+        const newCust: Customer = {
+          id: `CUST-${Date.now().toString().slice(-4)}`,
+          name: user.displayName,
+          phone: user.phone || '+254 722 000 000',
+          email: user.email,
+          totalSpent: 0,
+          transactionCount: 0,
+          loyaltyPoints: 100,
+          lastVisit: 'Just registered',
+          tier: 'BRONZE',
+          walletBalance: 12000,
+          memberSince: 'Today',
+          avatarInitials: user.displayName.slice(0, 2).toUpperCase(),
+        };
+        handleAddNewCustomer(newCust);
+      }
+    } else {
+      // Create/update staff profile
+      const staffAcc: StaffAccount = {
+        id: `ACC-${user.uid.slice(0, 6)}`,
+        name: user.displayName,
+        role: user.role,
+        email: user.email,
+        title: user.role === 'CASHIER' ? 'Registered POS Cashier' : user.role === 'MANAGER' ? 'Registered Store Manager' : 'FinTech Researcher',
+        badgeId: user.role === 'CASHIER' ? 'CSH-REG' : user.role === 'MANAGER' ? 'MGR-REG' : 'RES-REG',
+        assignedTill: business.tillNumber,
+        branch: business.branch,
+        permissions: user.role === 'MANAGER' 
+          ? ['FULL_STORE_ADMIN', 'REVENUE_ANALYTICS', 'AUDIT_RECONCILIATION'] 
+          : user.role === 'CASHIER'
+          ? ['POS_CHECKOUT', 'STK_PUSH_DISPATCH', 'CODE_VERIFICATION']
+          : ['TAM_SIMULATOR', 'EMPIRICAL_AUDIT_DATA'],
+        status: 'ON_DUTY',
+        avatarInitials: user.displayName.slice(0, 2).toUpperCase(),
+      };
+      setActiveStaffAccount(staffAcc);
+    }
+  };
+
   const handleLogin = async () => {
     try {
       sounds.playClick();
       await signInWithPopup(auth, googleProvider);
     } catch (error) {
-      console.warn('Google sign-in completed or cancelled:', error);
+      console.warn('Sign-in completed or cancelled:', error);
     }
   };
 
@@ -164,8 +270,12 @@ export default function App() {
     try {
       sounds.playClick();
       await signOut(auth);
+      setSessionUser(null);
+      localStorage.removeItem('mp_user_session_v1');
     } catch (error) {
       console.warn('Sign out error:', error);
+      setSessionUser(null);
+      localStorage.removeItem('mp_user_session_v1');
     }
   };
 
@@ -179,6 +289,31 @@ export default function App() {
 
   const handleCloseReceipt = () => {
     setActiveReceiptTxn(null);
+  };
+
+  // Role Switcher Handler (Ensures proper default subtab for each separated account)
+  const handleSelectRole = (role: UserRole) => {
+    setActiveRole(role);
+    if (role === 'CASHIER') {
+      setActiveSubTab('pos');
+    } else if (role === 'MANAGER') {
+      setActiveSubTab('dashboard');
+    } else if (role === 'CUSTOMER') {
+      setActiveSubTab('wallet');
+    } else if (role === 'RESEARCHER') {
+      setActiveSubTab('simulator');
+    }
+  };
+
+  // Customer Account Switcher & Creation
+  const handleSelectCustomer = (cust: Customer) => {
+    setActiveCustomerId(cust.id);
+  };
+
+  const handleAddNewCustomer = async (newCust: Customer) => {
+    setCustomers(prev => [newCust, ...prev]);
+    setActiveCustomerId(newCust.id);
+    await saveCustomerToDb(newCust);
   };
 
   // Trigger STK Push prompt (customer enters PIN)
@@ -200,11 +335,17 @@ export default function App() {
 
     if (existingIndex >= 0) {
       const current = customers[existingIndex];
+      const newPoints = current.loyaltyPoints + Math.floor(amount / 10);
+      const newSpend = current.totalSpent + amount;
+      const newTier: Customer['tier'] = newSpend > 50000 ? 'PLATINUM' : newSpend > 20000 ? 'GOLD' : newSpend > 10000 ? 'SILVER' : 'BRONZE';
+      
       updatedCust = {
         ...current,
-        totalSpent: current.totalSpent + amount,
+        totalSpent: newSpend,
         transactionCount: current.transactionCount + 1,
-        loyaltyPoints: current.loyaltyPoints + Math.floor(amount / 10),
+        loyaltyPoints: newPoints,
+        walletBalance: Math.max(0, (current.walletBalance || 10000) - amount),
+        tier: newTier,
         lastVisit: 'Just now',
       };
     } else {
@@ -215,12 +356,25 @@ export default function App() {
         totalSpent: amount,
         transactionCount: 1,
         loyaltyPoints: Math.floor(amount / 10),
+        walletBalance: 15000,
+        tier: 'BRONZE',
+        memberSince: 'Today',
+        avatarInitials: customerName ? customerName.slice(0, 2).toUpperCase() : 'VC',
         lastVisit: 'Just now',
       };
     }
 
     // Save to Firestore and local state
     await saveCustomerToDb(updatedCust);
+    setCustomers(prev => {
+      const idx = prev.findIndex(c => c.id === updatedCust.id);
+      if (idx >= 0) {
+        const copy = [...prev];
+        copy[idx] = updatedCust;
+        return copy;
+      }
+      return [updatedCust, ...prev];
+    });
   };
 
   // Callback after PIN is entered in STK prompt
@@ -295,6 +449,22 @@ export default function App() {
     return d.toDateString() === now.toDateString();
   });
 
+  // MANDATORY AUTHENTICATION GATE:
+  // If user is not authenticated, show registration and login screen before accessing systems!
+  const isAuthenticated = !!(sessionUser || currentUser);
+
+  if (!isAuthenticated) {
+    return (
+      <AuthGateway
+        onAuthenticated={handleUserAuthenticated}
+        staffAccounts={staffAccounts}
+        customers={customers}
+        businessName={business.name}
+        tillNumber={business.tillNumber}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-stone-100/70 text-stone-900 font-sans flex flex-col">
       {/* Toast Alert for incoming payment */}
@@ -324,29 +494,37 @@ export default function App() {
         </div>
       )}
 
-      {/* Main Navigation Header */}
+      {/* Main Navigation & Role Header */}
       <Header
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
         activeRole={activeRole}
-        setActiveRole={setActiveRole}
+        setActiveRole={handleSelectRole}
+        activeStaffAccount={activeStaffAccount}
+        activeCustomer={activeCustomer}
+        onOpenAccountSwitcher={() => setIsAccountSwitcherOpen(true)}
+        activeSubTab={activeSubTab}
+        setActiveSubTab={setActiveSubTab}
         business={business}
         soundEnabled={soundEnabled}
         setSoundEnabled={setSoundEnabled}
         todayCount={todayTransactions.length}
         dbConnected={dbConnected}
         currentUser={currentUser}
+        sessionUser={sessionUser}
         onLogin={handleLogin}
         onLogout={handleLogout}
         onOpenDarajaConfig={() => setIsDarajaModalOpen(true)}
       />
 
-      {/* Main Content Area */}
+      {/* Main Workspace Area (Cleanly separated for each account) */}
       <main className="flex-1 pb-12">
-        {activeTab === 'cashier' && (
+        {/* 1. CASHIER WORKSPACE */}
+        {activeRole === 'CASHIER' && (
           <CashierTerminal
             business={business}
             transactions={transactions}
+            activeStaffAccount={activeStaffAccount}
+            activeSubTab={activeSubTab}
+            setActiveSubTab={setActiveSubTab}
             onTriggerStkPush={handleTriggerStkPush}
             onViewReceipt={handleOpenReceipt}
             onDirectRecordPayment={handleDirectRecordPayment}
@@ -354,38 +532,59 @@ export default function App() {
           />
         )}
 
-        {activeTab === 'dashboard' && (
+        {/* 2. MANAGER WORKSPACE */}
+        {activeRole === 'MANAGER' && (
           <ManagerDashboard
             business={business}
             transactions={transactions}
             audits={audits}
+            activeSubTab={activeSubTab}
+            setActiveSubTab={setActiveSubTab}
             onRefreshAudits={refreshAudits}
             onViewReceipt={handleOpenReceipt}
             onUpdateBusiness={handleUpdateBusiness}
+            onOpenDarajaConfig={() => setIsDarajaModalOpen(true)}
           />
         )}
 
-        {activeTab === 'transactions' && (
-          <TransactionHistory
-            transactions={transactions}
-            onViewReceipt={handleOpenReceipt}
-          />
-        )}
-
-        {activeTab === 'customer' && (
+        {/* 3. CUSTOMER WORKSPACE */}
+        {activeRole === 'CUSTOMER' && (
           <CustomerPortal
             business={business}
             customers={customers}
             transactions={transactions}
+            activeCustomer={activeCustomer}
+            onSelectCustomer={handleSelectCustomer}
+            onAddCustomer={handleAddNewCustomer}
+            activeSubTab={activeSubTab}
+            setActiveSubTab={setActiveSubTab}
             onTriggerStkPush={handleTriggerStkPush}
             onViewReceipt={handleOpenReceipt}
           />
         )}
 
-        {activeTab === 'research' && (
-          <ResearchExplorer />
+        {/* 4. RESEARCHER WORKSPACE */}
+        {activeRole === 'RESEARCHER' && (
+          <ResearchExplorer
+            activeSubTab={activeSubTab}
+            setActiveSubTab={setActiveSubTab}
+          />
         )}
       </main>
+
+      {/* Multi-Account & Workspace Switcher Modal */}
+      <AccountSwitcherModal
+        isOpen={isAccountSwitcherOpen}
+        onClose={() => setIsAccountSwitcherOpen(false)}
+        activeRole={activeRole}
+        onSelectRole={handleSelectRole}
+        staffAccounts={staffAccounts}
+        activeStaffAccount={activeStaffAccount}
+        onSelectStaffAccount={(acc) => setActiveStaffAccount(acc)}
+        customers={customers}
+        activeCustomer={activeCustomer}
+        onSelectCustomer={handleSelectCustomer}
+      />
 
       {/* STK Push Phone Simulation & Real Handset Modal */}
       <StkPushModal
@@ -427,7 +626,7 @@ export default function App() {
             <span className="text-emerald-700 font-medium">Real-Time Cloud Ledger Connected</span>
           </div>
           <p className="text-[11px] text-stone-400">
-            Persistent cloud ledger supporting M-Pesa Till 842109 & Paybill 522522 with live sync.
+            Multi-Account Workspace Architecture • Till 842109 & Paybill 522522 with live sync.
           </p>
         </div>
       </footer>

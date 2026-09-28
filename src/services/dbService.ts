@@ -17,7 +17,8 @@ import {
   ManualEntryAudit, 
   GatewayConfig, 
   StkRequest, 
-  VerificationLog 
+  VerificationLog,
+  UserProfile 
 } from '../types';
 import { initialBusiness, initialCustomers, initialTransactions, initialAudits } from '../utils/mockData';
 
@@ -29,6 +30,7 @@ export const COLLECTIONS = {
   SETTINGS: 'settings',
   STK_REQUESTS: 'stk_requests',
   VERIFICATIONS: 'verifications',
+  USERS: 'users',
 };
 
 // Seed initial database records if empty
@@ -275,5 +277,27 @@ export async function saveBusinessToDb(biz: BusinessProfile): Promise<void> {
     await setDoc(doc(db, COLLECTIONS.BUSINESSES, biz.id), biz);
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, path);
+  }
+}
+
+export async function saveUserProfileToDb(profile: UserProfile): Promise<void> {
+  const path = `${COLLECTIONS.USERS}/${profile.uid}`;
+  try {
+    await setDoc(doc(db, COLLECTIONS.USERS, profile.uid), profile, { merge: true });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, path);
+  }
+}
+
+export async function getUserProfileFromDb(uid: string): Promise<UserProfile | null> {
+  const path = `${COLLECTIONS.USERS}/${uid}`;
+  try {
+    const snap = await getDoc(doc(db, COLLECTIONS.USERS, uid));
+    if (snap.exists()) {
+      return snap.data() as UserProfile;
+    }
+    return null;
+  } catch (error) {
+    handleFirestoreError(error, OperationType.GET, path);
   }
 }

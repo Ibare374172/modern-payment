@@ -333,8 +333,19 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on http://localhost:3000`);
+  const server = app.listen(PORT, '0.0.0.0', () => {
+    console.log(`\n  ➜  Local:   http://localhost:${PORT}/`);
+    console.log(`  ➜  Network: http://127.0.0.1:${PORT}/\n`);
+  });
+
+  server.on('error', (err: NodeJS.ErrnoException) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`\n[ERROR] Port ${PORT} is already in use by another service.`);
+      console.error(`Please close the existing process on port ${PORT} or run with:`);
+      console.error(`  PORT=3001 npm run dev\n`);
+    } else {
+      console.error('Server error:', err);
+    }
   });
 }
 

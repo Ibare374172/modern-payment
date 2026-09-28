@@ -147,10 +147,25 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // Validation helper for Registered Users
+    function isValidUser(data) {
+      return data.keys().hasAll(['email', 'name', 'role']) &&
+        data.email is string && data.email.size() > 0 && data.email.size() <= 200 &&
+        data.name is string && data.name.size() > 0 && data.name.size() <= 150 &&
+        data.role in ['CASHIER', 'MANAGER', 'CUSTOMER', 'RESEARCHER'];
+    }
+
     // Match rules for /verifications
     match /verifications/{verificationId} {
       allow get, list: if true;
       allow create, update: if isValidId(verificationId) && isValidVerificationLog(incoming());
+      allow delete: if isAdmin();
+    }
+
+    // Match rules for /users
+    match /users/{userId} {
+      allow get, list: if true;
+      allow create, update: if isValidId(userId) && isValidUser(incoming());
       allow delete: if isAdmin();
     }
 

@@ -49,6 +49,36 @@ export interface Customer {
   transactionCount: number;
   loyaltyPoints: number;
   lastVisit: string;
+  walletBalance?: number;
+  tier?: 'BRONZE' | 'SILVER' | 'GOLD' | 'PLATINUM';
+  memberSince?: string;
+  avatarInitials?: string;
+}
+
+export interface StaffAccount {
+  id: string;
+  name: string;
+  role: UserRole;
+  email: string;
+  title: string;
+  badgeId: string;
+  assignedTill?: string;
+  branch: string;
+  permissions: string[];
+  status: 'ACTIVE' | 'ON_DUTY' | 'AWAY';
+  avatarInitials: string;
+}
+
+export interface UserProfile {
+  uid: string;
+  name: string;
+  email: string;
+  phone?: string;
+  role: UserRole;
+  badgeId?: string;
+  assignedTill?: string;
+  createdAt: string;
+  avatarInitials?: string;
 }
 
 export interface BusinessProfile {

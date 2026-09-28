@@ -1,4 +1,59 @@
-import { BusinessProfile, Customer, Transaction, ManualEntryAudit, SurveySampleBreakdown } from '../types';
+import { BusinessProfile, Customer, Transaction, ManualEntryAudit, SurveySampleBreakdown, StaffAccount } from '../types';
+
+export const initialStaffAccounts: StaffAccount[] = [
+  {
+    id: 'ACC-CSH-01',
+    name: "Sarah Ndung'u",
+    role: 'CASHIER',
+    email: 'sarah.n@zawadimart.co.ke',
+    title: 'Senior POS Cashier (Till 1)',
+    badgeId: 'CSH-104',
+    assignedTill: '842109',
+    branch: 'Westlands Commercial Hub',
+    permissions: ['POS Terminal Checkout', 'STK Push Dispatch', 'Instant Code Verification', 'Shift Drawer Reconciliation'],
+    status: 'ON_DUTY',
+    avatarInitials: 'SN',
+  },
+  {
+    id: 'ACC-CSH-02',
+    name: 'Peter Kiprop',
+    role: 'CASHIER',
+    email: 'peter.k@zawadimart.co.ke',
+    title: 'Counter Cashier (Till 2)',
+    badgeId: 'CSH-105',
+    assignedTill: '842109',
+    branch: 'Westlands Commercial Hub',
+    permissions: ['POS Terminal Checkout', 'STK Push Dispatch', 'Instant Code Verification'],
+    status: 'ACTIVE',
+    avatarInitials: 'PK',
+  },
+  {
+    id: 'ACC-MGR-01',
+    name: 'James Kamau',
+    role: 'MANAGER',
+    email: 'james.kamau@zawadimart.co.ke',
+    title: 'Branch General Manager',
+    badgeId: 'MGR-001',
+    assignedTill: 'Store Super Admin (Till 842109 & Paybill 522522)',
+    branch: 'Westlands Commercial Hub',
+    permissions: ['Full Store Administration', 'Real-time Financial Analytics', 'Exercise Notebook Audit Reconciliation', 'Daraja API Key Management', 'Till & Business Settings', 'Ledger Export'],
+    status: 'ACTIVE',
+    avatarInitials: 'JK',
+  },
+  {
+    id: 'ACC-RES-01',
+    name: 'Dr. Margaret Otieno',
+    role: 'RESEARCHER',
+    email: 'm.otieno@uonbi.ac.ke',
+    title: 'Principal FinTech Researcher (PhD)',
+    badgeId: 'RES-882',
+    assignedTill: 'Academic Sandbox & Audit Data',
+    branch: 'Faculty of Computing & Information Systems',
+    permissions: ['TAM Simulator Model Adjustments', 'Empirical Audit Leakage Analysis', 'Thesis Chapters 1-5 Access', '120 SME Survey Data', 'Research Dataset Export'],
+    status: 'ACTIVE',
+    avatarInitials: 'MO',
+  },
+];
 
 export const initialBusiness: BusinessProfile = {
   id: 'BIZ-254-001',
@@ -160,6 +215,10 @@ export const initialCustomers: Customer[] = [
     transactionCount: 14,
     loyaltyPoints: 423,
     lastVisit: 'Today, 10:45 AM',
+    tier: 'GOLD',
+    walletBalance: 18450,
+    memberSince: 'Jan 2024',
+    avatarInitials: 'WM',
   },
   {
     id: 'CUST-02',
@@ -170,6 +229,10 @@ export const initialCustomers: Customer[] = [
     transactionCount: 8,
     loyaltyPoints: 189,
     lastVisit: 'Today, 10:20 AM',
+    tier: 'SILVER',
+    walletBalance: 7120,
+    memberSince: 'Mar 2024',
+    avatarInitials: 'BO',
   },
   {
     id: 'CUST-03',
@@ -180,6 +243,10 @@ export const initialCustomers: Customer[] = [
     transactionCount: 21,
     loyaltyPoints: 654,
     lastVisit: 'Today, 09:50 AM',
+    tier: 'PLATINUM',
+    walletBalance: 34900,
+    memberSince: 'Nov 2023',
+    avatarInitials: 'FC',
   },
   {
     id: 'CUST-04',
@@ -190,6 +257,10 @@ export const initialCustomers: Customer[] = [
     transactionCount: 5,
     loyaltyPoints: 125,
     lastVisit: 'Today, 09:00 AM',
+    tier: 'BRONZE',
+    walletBalance: 4200,
+    memberSince: 'Jun 2024',
+    avatarInitials: 'DK',
   },
   {
     id: 'CUST-05',
@@ -200,6 +271,10 @@ export const initialCustomers: Customer[] = [
     transactionCount: 34,
     loyaltyPoints: 1280,
     lastVisit: 'Today, 08:35 AM',
+    tier: 'PLATINUM',
+    walletBalance: 92300,
+    memberSince: 'Aug 2023',
+    avatarInitials: 'AH',
   },
   {
     id: 'CUST-06',
@@ -210,6 +285,10 @@ export const initialCustomers: Customer[] = [
     transactionCount: 11,
     loyaltyPoints: 284,
     lastVisit: 'Today, 07:55 AM',
+    tier: 'GOLD',
+    walletBalance: 22800,
+    memberSince: 'Feb 2024',
+    avatarInitials: 'HM',
   },
 ];
 

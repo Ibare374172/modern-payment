@@ -18,8 +18,34 @@ import {
 } from 'lucide-react';
 import { sounds } from '../utils/audio';
 
-export const ResearchExplorer: React.FC = () => {
-  const [activeSubTab, setActiveSubTab] = useState<'framework' | 'survey' | 'architecture' | 'chapters'>('framework');
+interface ResearchExplorerProps {
+  activeSubTab?: string;
+  setActiveSubTab?: (tab: string) => void;
+}
+
+export const ResearchExplorer: React.FC<ResearchExplorerProps> = ({
+  activeSubTab: externalSubTab,
+  setActiveSubTab: setExternalSubTab,
+}) => {
+  const [internalSubTab, setInternalSubTab] = useState<'framework' | 'survey' | 'architecture' | 'chapters'>('framework');
+
+  // Map external tab to internal representation
+  const activeSubTab = ((): 'framework' | 'survey' | 'architecture' | 'chapters' => {
+    if (externalSubTab === 'simulator' || externalSubTab === 'framework') return 'framework';
+    if (externalSubTab === 'survey') return 'survey';
+    if (externalSubTab === 'empirical' || externalSubTab === 'architecture') return 'architecture';
+    if (externalSubTab === 'chapters') return 'chapters';
+    return internalSubTab;
+  })();
+
+  const handleSelectTab = (tab: 'framework' | 'survey' | 'architecture' | 'chapters') => {
+    setInternalSubTab(tab);
+    if (setExternalSubTab) {
+      if (tab === 'framework') setExternalSubTab('simulator');
+      else if (tab === 'architecture') setExternalSubTab('empirical');
+      else setExternalSubTab(tab);
+    }
+  };
 
   // Interactive TAM / UTAUT simulator sliders
   const [perceivedUsefulness, setPerceivedUsefulness] = useState<number>(88);
@@ -70,7 +96,7 @@ export const ResearchExplorer: React.FC = () => {
               <button
                 key={tab.id}
                 onClick={() => {
-                  setActiveSubTab(tab.id as typeof activeSubTab);
+                  handleSelectTab(tab.id as typeof activeSubTab);
                   sounds.playClick();
                 }}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${

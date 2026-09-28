@@ -54,7 +54,7 @@ export const AuthGateway: React.FC<AuthGatewayProps> = ({
   businessName,
   tillNumber,
 }) => {
-  const [authMode, setAuthMode] = useState<'LOGIN' | 'REGISTER' | 'QUICK_ACCESS'>('LOGIN');
+  const [authMode, setAuthMode] = useState<'LOGIN' | 'REGISTER'>('LOGIN');
 
   // Login Form State
   const [loginEmail, setLoginEmail] = useState('');
@@ -106,11 +106,11 @@ export const AuthGateway: React.FC<AuthGatewayProps> = ({
       console.warn('Login error:', err);
       const errorMsg = err instanceof Error ? err.message : String(err);
       if (errorMsg.includes('auth/invalid-credential') || errorMsg.includes('auth/wrong-password') || errorMsg.includes('auth/user-not-found')) {
-        setErrorMessage('Invalid email or password. Please verify your credentials or use Quick Demo Access below.');
+        setErrorMessage('Invalid email or password. Please verify your credentials or register a new account.');
       } else if (errorMsg.includes('auth/invalid-email')) {
         setErrorMessage('Please enter a valid email address.');
       } else {
-        setErrorMessage('Login failed. If you do not have an account yet, switch to the "Register" tab or use "Quick Demo Access".');
+        setErrorMessage('Login failed. If you do not have an account yet, switch to the "Create Account" tab.');
       }
       sounds.playWarning();
     } finally {
@@ -208,17 +208,6 @@ export const AuthGateway: React.FC<AuthGatewayProps> = ({
     }
   };
 
-  // 4. Quick Demo Login for instant testing of separated accounts
-  const handleQuickDemoLogin = (role: UserRole, accountName: string, email: string) => {
-    sounds.playPaymentSuccess();
-    onAuthenticated({
-      uid: `DEMO-${role}-${Date.now().toString().slice(-4)}`,
-      email,
-      displayName: accountName,
-      role,
-    });
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-stone-900 via-stone-950 to-stone-900 text-stone-100 flex flex-col justify-between p-4 sm:p-6 lg:p-8 font-sans">
       
@@ -269,8 +258,8 @@ export const AuthGateway: React.FC<AuthGatewayProps> = ({
               </p>
             </div>
 
-            {/* Navigation Tabs (Sign In / Register / Quick Access) */}
-            <div className="grid grid-cols-3 gap-1.5 p-1 bg-stone-950/80 rounded-2xl border border-stone-800 mt-5">
+            {/* Navigation Tabs (Sign In / Register) */}
+            <div className="grid grid-cols-2 gap-1.5 p-1 bg-stone-950/80 rounded-2xl border border-stone-800 mt-5">
               <button
                 type="button"
                 id="auth-tab-login"
@@ -302,22 +291,6 @@ export const AuthGateway: React.FC<AuthGatewayProps> = ({
                 }`}
               >
                 Create Account
-              </button>
-              <button
-                type="button"
-                id="auth-tab-quick"
-                onClick={() => {
-                  setAuthMode('QUICK_ACCESS');
-                  setErrorMessage(null);
-                  sounds.playClick();
-                }}
-                className={`py-2 text-xs font-bold rounded-xl transition-all ${
-                  authMode === 'QUICK_ACCESS'
-                    ? 'bg-stone-800 text-emerald-300 shadow-xs'
-                    : 'text-stone-400 hover:text-white'
-                }`}
-              >
-                Quick Demo
               </button>
             </div>
           </div>
@@ -557,109 +530,6 @@ export const AuthGateway: React.FC<AuthGatewayProps> = ({
                   <span>{isLoading ? 'Creating Account...' : 'Complete Registration & Enter System'}</span>
                 </button>
               </form>
-            )}
-
-            {/* TAB 3: QUICK DEMO ACCESS */}
-            {authMode === 'QUICK_ACCESS' && (
-              <div className="space-y-3">
-                <p className="text-xs text-stone-600">
-                  Select any pre-configured operational persona below to log in immediately with 1 click:
-                </p>
-
-                <div className="space-y-2">
-                  {/* Cashier demo */}
-                  <button
-                    type="button"
-                    onClick={() => handleQuickDemoLogin('CASHIER', "Sarah Ndung'u", 'sarah.n@zawadimart.co.ke')}
-                    className="w-full text-left p-3.5 rounded-2xl border border-stone-200 hover:border-emerald-500 bg-stone-50 hover:bg-emerald-50/50 transition-all flex items-center justify-between group"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-xs shadow-xs">
-                        <Store className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-xs text-stone-900">Sarah Ndung&apos;u</span>
-                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.2 rounded bg-emerald-100 text-emerald-800">
-                            Cashier
-                          </span>
-                        </div>
-                        <div className="text-[11px] text-stone-500">Till #842109 Terminal • Badge #CSH-104</div>
-                      </div>
-                    </div>
-                    <ArrowRight className="w-4 h-4 text-stone-400 group-hover:text-emerald-700 group-hover:translate-x-1 transition-all" />
-                  </button>
-
-                  {/* Manager demo */}
-                  <button
-                    type="button"
-                    onClick={() => handleQuickDemoLogin('MANAGER', 'James Kamau', 'james.kamau@zawadimart.co.ke')}
-                    className="w-full text-left p-3.5 rounded-2xl border border-stone-200 hover:border-indigo-500 bg-stone-50 hover:bg-indigo-50/50 transition-all flex items-center justify-between group"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-xs shadow-xs">
-                        <BarChart3 className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-xs text-stone-900">James Kamau</span>
-                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.2 rounded bg-indigo-100 text-indigo-800">
-                            Store Manager
-                          </span>
-                        </div>
-                        <div className="text-[11px] text-stone-500">Branch General Manager • Super Admin</div>
-                      </div>
-                    </div>
-                    <ArrowRight className="w-4 h-4 text-stone-400 group-hover:text-indigo-700 group-hover:translate-x-1 transition-all" />
-                  </button>
-
-                  {/* Customer demo */}
-                  <button
-                    type="button"
-                    onClick={() => handleQuickDemoLogin('CUSTOMER', 'Wanjiku Mwangi', 'wanjiku.m@gmail.com')}
-                    className="w-full text-left p-3.5 rounded-2xl border border-stone-200 hover:border-sky-500 bg-stone-50 hover:bg-sky-50/50 transition-all flex items-center justify-between group"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-sky-600 text-white flex items-center justify-center font-bold text-xs shadow-xs">
-                        <Smartphone className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-xs text-stone-900">Wanjiku Mwangi</span>
-                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.2 rounded bg-sky-100 text-sky-800">
-                            Customer Wallet
-                          </span>
-                        </div>
-                        <div className="text-[11px] text-stone-500">+254 723 458 912 • 423 Zawadi Points</div>
-                      </div>
-                    </div>
-                    <ArrowRight className="w-4 h-4 text-stone-400 group-hover:text-sky-700 group-hover:translate-x-1 transition-all" />
-                  </button>
-
-                  {/* Researcher demo */}
-                  <button
-                    type="button"
-                    onClick={() => handleQuickDemoLogin('RESEARCHER', 'Dr. Margaret Otieno', 'm.otieno@uonbi.ac.ke')}
-                    className="w-full text-left p-3.5 rounded-2xl border border-stone-200 hover:border-amber-500 bg-stone-50 hover:bg-amber-50/50 transition-all flex items-center justify-between group"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-amber-600 text-white flex items-center justify-center font-bold text-xs shadow-xs">
-                        <BookOpenCheck className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-xs text-stone-900">Dr. Margaret Otieno</span>
-                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.2 rounded bg-amber-100 text-amber-800">
-                            Researcher
-                          </span>
-                        </div>
-                        <div className="text-[11px] text-stone-500">Lead FinTech Researcher • TAM Project</div>
-                      </div>
-                    </div>
-                    <ArrowRight className="w-4 h-4 text-stone-400 group-hover:text-amber-700 group-hover:translate-x-1 transition-all" />
-                  </button>
-                </div>
-              </div>
             )}
 
           </div>

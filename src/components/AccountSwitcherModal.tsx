@@ -63,7 +63,7 @@ export const AccountSwitcherModal: React.FC<AccountSwitcherModalProps> = ({
       case 'MANAGER': return 'Store Manager';
       case 'CUSTOMER': return 'Customer Wallet';
       case 'RESEARCHER': return 'Academic Researcher';
-      default: return 'Demo User';
+      default: return 'User';
     }
   };
 

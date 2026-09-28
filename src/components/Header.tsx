@@ -243,7 +243,7 @@ export const Header: React.FC<HeaderProps> = ({
                     </span>
                   ) : (
                     <span className="text-[9px] bg-stone-900/10 px-1 py-0.2 rounded font-medium">
-                      Demo
+                      Active
                     </span>
                   )}
                 </div>

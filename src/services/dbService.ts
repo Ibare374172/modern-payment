@@ -25,7 +25,8 @@ import {
   syncTransactionToPostgres, 
   syncCustomerToPostgres, 
   syncAuditToPostgres, 
-  syncBusinessToPostgres 
+  syncBusinessToPostgres,
+  syncUserToPostgres,
 } from './realtimePostgres';
 
 export const COLLECTIONS = {
@@ -296,8 +297,15 @@ export async function saveUserProfileToDb(profile: UserProfile): Promise<void> {
   try {
     await setDoc(doc(db, COLLECTIONS.USERS, profile.uid), profile, { merge: true });
   } catch (error) {
-    handleFirestoreError(error, OperationType.WRITE, path);
+    console.warn(`[Firestore] User profile save note for ${path}:`, error);
   }
+  // Also replicate to PostgreSQL user table
+  syncUserToPostgres({
+    uid: profile.uid,
+    email: profile.email,
+    displayName: profile.name,
+    role: profile.role,
+  }).catch(e => console.warn('Postgres user sync note:', e));
 }
 
 export async function getUserProfileFromDb(uid: string): Promise<UserProfile | null> {

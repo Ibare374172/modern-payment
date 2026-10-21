@@ -164,11 +164,14 @@ export const AboutWebsiteModal: React.FC<AboutWebsiteModalProps> = ({
           <div className="border border-slate-200 rounded-xl p-4 bg-slate-50/70">
             <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2 flex items-center gap-2">
               <BookOpenCheck className="w-4 h-4 text-indigo-600" />
-              Academic Research Foundation
+              Academic Research Foundation & Engineering
             </h3>
-            <p className="text-xs text-slate-600 leading-relaxed">
+            <p className="text-xs text-slate-600 leading-relaxed mb-2">
               This system serves as an interactive empirical testbed based on research into <em>"The Effect of Mobile Payment Systems on the Performance of Small and Medium Enterprises (SMEs) in Kenya."</em> It demonstrates how automated M-Pesa integration eliminates manual bookkeeping errors, reduces queue times by up to 74%, and improves cash-flow reconciliation accuracy.
             </p>
+            <div className="text-xs text-slate-700 font-medium pt-2 border-t border-slate-200">
+              Author & Lead Engineer: <strong className="text-slate-900">Dennis Njuguna</strong> (<a href="mailto:njugunadennis73@gmail.com" className="text-indigo-600 hover:underline">njugunadennis73@gmail.com</a>)
+            </div>
           </div>
         </div>
 

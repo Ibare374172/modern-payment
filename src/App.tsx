@@ -14,6 +14,7 @@ import {
   getStoredBusiness, 
   getStoredCustomers, 
   getStoredAudits,
+  findRegisteredAccount,
 } from './utils/storage';
 import { initialStaffAccounts } from './utils/mockData';
 import { 
@@ -132,12 +133,16 @@ export default function App() {
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
       if (user && !sessionUser) {
-        const role: UserRole = user.email === 'hillary.makedi@gmail.com' ? 'CUSTOMER' : 'CASHIER';
+        const registered = findRegisteredAccount(user.email || '');
+        const isManagerEmail = user.email === 'njugunadennis73@gmail.com' || user.email === 'hillary.makedi@gmail.com';
+        const role: UserRole = registered?.role || (isManagerEmail ? 'MANAGER' : 'CASHIER');
+        const defaultName = user.email === 'njugunadennis73@gmail.com' ? 'Dennis Njuguna' : 'Authorized User';
         const session = {
           uid: user.uid,
           email: user.email || 'user@mpesa.ke',
-          displayName: user.displayName || user.email?.split('@')[0] || 'Authorized User',
+          displayName: user.displayName || registered?.name || defaultName,
           role,
+          phone: registered?.phone,
         };
         setSessionUser(session);
         try {

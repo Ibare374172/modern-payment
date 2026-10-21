@@ -173,3 +173,62 @@ export function verifyTransactionCode(code: string, transactions: Transaction[])
     message: `Code "${cleanCode}" NOT FOUND in the business transaction server. Customer may have sent to wrong Till or received a fabricated SMS.`,
   };
 }
+
+// ---------------------------------------------------------------------------
+// REGISTERED ACCOUNTS PERSISTENCE
+// ---------------------------------------------------------------------------
+const REGISTERED_ACCOUNTS_KEY = 'mp_registered_accounts_v1';
+
+export function getRegisteredAccounts(): import('../types').RegisteredAccount[] {
+  try {
+    const raw = localStorage.getItem(REGISTERED_ACCOUNTS_KEY);
+    if (!raw) {
+      return [];
+    }
+    const accounts: import('../types').RegisteredAccount[] = JSON.parse(raw);
+    // Filter out any legacy demo accounts for clean production state
+    const realAccounts = accounts.filter(a => a.provider !== 'demo');
+    if (realAccounts.length !== accounts.length) {
+      localStorage.setItem(REGISTERED_ACCOUNTS_KEY, JSON.stringify(realAccounts));
+    }
+    return realAccounts;
+  } catch {
+    return [];
+  }
+}
+
+export function saveRegisteredAccount(account: import('../types').RegisteredAccount): void {
+  try {
+    const accounts = getRegisteredAccounts();
+    const existingIndex = accounts.findIndex(
+      a => a.email.toLowerCase() === account.email.toLowerCase() || a.uid === account.uid
+    );
+    if (existingIndex >= 0) {
+      accounts[existingIndex] = { ...accounts[existingIndex], ...account };
+    } else {
+      accounts.push(account);
+    }
+    localStorage.setItem(REGISTERED_ACCOUNTS_KEY, JSON.stringify(accounts));
+  } catch (err) {
+    console.warn('Failed to save registered account locally:', err);
+  }
+}
+
+export function findRegisteredAccount(email: string): import('../types').RegisteredAccount | undefined {
+  const accounts = getRegisteredAccounts();
+  const normalized = email.trim().toLowerCase();
+  return accounts.find(a => a.email.toLowerCase() === normalized);
+}
+
+export function verifyRegisteredAccount(
+  email: string,
+  passwordAttempt: string
+): import('../types').RegisteredAccount | null {
+  const account = findRegisteredAccount(email);
+  if (!account) return null;
+  // If account has a stored password, check match (or demo pass)
+  if (account.password && account.password !== passwordAttempt.trim()) {
+    return null;
+  }
+  return account;
+}

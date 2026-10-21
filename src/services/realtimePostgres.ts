@@ -180,3 +180,21 @@ export async function syncBusinessToPostgres(biz: BusinessProfile): Promise<bool
     return false;
   }
 }
+
+export async function syncUserToPostgres(user: {
+  uid: string;
+  email: string;
+  displayName?: string;
+  role?: string;
+}): Promise<boolean> {
+  try {
+    const res = await fetch('/api/postgres/users/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(user),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}

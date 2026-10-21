@@ -83,49 +83,53 @@ export const Header: React.FC<HeaderProps> = ({
 
   // Determine current active account presentation details
   const getAccountBadgeDetails = () => {
+    const isUserActiveRole = sessionUser && sessionUser.role === activeRole;
+    const currentName = isUserActiveRole ? sessionUser.displayName : activeStaffAccount.name;
+    const userInitials = isUserActiveRole ? (sessionUser.displayName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'ZM') : activeStaffAccount.avatarInitials;
+
     switch (activeRole) {
       case 'CASHIER':
         return {
-          name: activeStaffAccount.name,
-          title: activeStaffAccount.title,
-          subLabel: `Till #${business.tillNumber} • Badge #${activeStaffAccount.badgeId}`,
+          name: currentName,
+          title: isUserActiveRole ? 'Till POS Operator' : activeStaffAccount.title,
+          subLabel: `Till #${business.tillNumber} • Badge #${isUserActiveRole ? 'CSH-ON' : activeStaffAccount.badgeId}`,
           roleLabel: 'Cashier Account',
           bgBadge: 'bg-emerald-50 text-emerald-800 border-emerald-200',
           avatarBg: 'bg-emerald-600 text-white',
-          initials: activeStaffAccount.avatarInitials,
+          initials: userInitials,
           icon: Store,
         };
       case 'MANAGER':
         return {
-          name: activeStaffAccount.role === 'MANAGER' ? activeStaffAccount.name : 'James Kamau',
-          title: 'Branch General Manager',
+          name: isUserActiveRole ? sessionUser.displayName : (activeStaffAccount.role === 'MANAGER' ? activeStaffAccount.name : 'Store Manager'),
+          title: 'Store Administrator & Manager',
           subLabel: `Full Store Administration • ${business.branch}`,
           roleLabel: 'Manager Account',
           bgBadge: 'bg-indigo-50 text-indigo-800 border-indigo-200',
           avatarBg: 'bg-indigo-600 text-white',
-          initials: 'JK',
+          initials: userInitials,
           icon: BarChart3,
         };
       case 'CUSTOMER':
         return {
-          name: activeCustomer.name,
+          name: isUserActiveRole ? sessionUser.displayName : activeCustomer.name,
           title: `${activeCustomer.tier || 'Gold'} Member • ${activeCustomer.loyaltyPoints} pts`,
-          subLabel: `${activeCustomer.phone} • Wallet Active`,
+          subLabel: `${sessionUser?.phone || activeCustomer.phone} • Wallet Active`,
           roleLabel: 'Customer Account',
           bgBadge: 'bg-sky-50 text-sky-800 border-sky-200',
           avatarBg: 'bg-sky-600 text-white',
-          initials: activeCustomer.avatarInitials || activeCustomer.name.slice(0, 2).toUpperCase(),
+          initials: isUserActiveRole ? userInitials : (activeCustomer.avatarInitials || 'CU'),
           icon: Smartphone,
         };
       case 'RESEARCHER':
         return {
-          name: 'Dr. Margaret Otieno',
-          title: 'Lead FinTech Researcher (PhD)',
+          name: isUserActiveRole ? sessionUser.displayName : 'Dr. Margaret Otieno',
+          title: 'FinTech Lead Researcher',
           subLabel: 'Faculty of Computing • TAM Project',
           roleLabel: 'Researcher Account',
           bgBadge: 'bg-amber-50 text-amber-800 border-amber-200',
           avatarBg: 'bg-amber-600 text-white',
-          initials: 'MO',
+          initials: userInitials,
           icon: BookOpenCheck,
         };
     }

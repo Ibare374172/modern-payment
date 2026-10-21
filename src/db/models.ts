@@ -1,4 +1,4 @@
-import { db, broadcastPostgresEvent } from './index.ts';
+import { db, broadcastPostgresEvent, isPostgresAvailable } from './index.ts';
 import { transactions, customers, audits, businesses, users } from './schema.ts';
 import { eq, desc } from 'drizzle-orm';
 import { 
@@ -30,17 +30,19 @@ const memoryStore = {
 
 export const TransactionModel = {
   async getAll(limitCount: number = 100) {
-    try {
-      const records = await db
-        .select()
-        .from(transactions)
-        .orderBy(desc(transactions.createdAt))
-        .limit(limitCount);
-      if (records.length > 0) {
-        return records;
+    if (await isPostgresAvailable()) {
+      try {
+        const records = await db
+          .select()
+          .from(transactions)
+          .orderBy(desc(transactions.createdAt))
+          .limit(limitCount);
+        if (records.length > 0) {
+          return records;
+        }
+      } catch {
+        // Fallback to cache
       }
-    } catch (err) {
-      console.warn('[PostgreSQL ORM] Using memory store cache for transactions:', (err as Error).message);
     }
     return memoryStore.transactions.slice(0, limitCount);
   },
@@ -117,11 +119,13 @@ export const TransactionModel = {
     };
     memoryStore.transactions.unshift(txnItem);
 
-    // Write to PostgreSQL
-    try {
-      await db.insert(transactions).values(record).onConflictDoNothing();
-    } catch (err) {
-      console.warn('[PostgreSQL ORM] Async write queued:', (err as Error).message);
+    // Write to PostgreSQL if online
+    if (await isPostgresAvailable()) {
+      try {
+        await db.insert(transactions).values(record).onConflictDoNothing();
+      } catch {
+        // Handled silently
+      }
     }
 
     // Broadcast Real-time event across the SSE stream
@@ -224,10 +228,12 @@ export const CustomerModel = {
       avatarInitials: record.avatarInitials,
     });
 
-    try {
-      await db.insert(customers).values(record).onConflictDoNothing();
-    } catch (err) {
-      console.warn('[PostgreSQL ORM] Customer insert queued:', (err as Error).message);
+    if (await isPostgresAvailable()) {
+      try {
+        await db.insert(customers).values(record).onConflictDoNothing();
+      } catch {
+        // Handled silently
+      }
     }
 
     broadcastPostgresEvent({
@@ -332,10 +338,12 @@ export const AuditModel = {
     };
     memoryStore.audits.unshift(auditItem);
 
-    try {
-      await db.insert(audits).values(record).onConflictDoNothing();
-    } catch (err) {
-      console.warn('[PostgreSQL ORM] Audit insert queued:', (err as Error).message);
+    if (await isPostgresAvailable()) {
+      try {
+        await db.insert(audits).values(record).onConflictDoNothing();
+      } catch {
+        // Handled silently
+      }
     }
 
     broadcastPostgresEvent({
@@ -386,26 +394,12 @@ export const BusinessModel = {
       ...data,
     };
 
-    try {
-      await db
-        .insert(businesses)
-        .values({
-          id: memoryStore.business.id,
-          name: memoryStore.business.name,
-          category: memoryStore.business.category,
-          tillNumber: memoryStore.business.tillNumber,
-          paybillNumber: memoryStore.business.paybillNumber,
-          accountRef: memoryStore.business.accountRef,
-          currency: memoryStore.business.currency,
-          branch: memoryStore.business.branch,
-          phone: memoryStore.business.phone,
-          email: memoryStore.business.email,
-          address: memoryStore.business.address,
-          dailyTarget: memoryStore.business.dailyTarget.toFixed(2),
-        })
-        .onConflictDoUpdate({
-          target: businesses.id,
-          set: {
+    if (await isPostgresAvailable()) {
+      try {
+        await db
+          .insert(businesses)
+          .values({
+            id: memoryStore.business.id,
             name: memoryStore.business.name,
             category: memoryStore.business.category,
             tillNumber: memoryStore.business.tillNumber,
@@ -417,10 +411,26 @@ export const BusinessModel = {
             email: memoryStore.business.email,
             address: memoryStore.business.address,
             dailyTarget: memoryStore.business.dailyTarget.toFixed(2),
-          },
-        });
-    } catch (err) {
-      console.warn('[PostgreSQL ORM] Business update queued:', (err as Error).message);
+          })
+          .onConflictDoUpdate({
+            target: businesses.id,
+            set: {
+              name: memoryStore.business.name,
+              category: memoryStore.business.category,
+              tillNumber: memoryStore.business.tillNumber,
+              paybillNumber: memoryStore.business.paybillNumber,
+              accountRef: memoryStore.business.accountRef,
+              currency: memoryStore.business.currency,
+              branch: memoryStore.business.branch,
+              phone: memoryStore.business.phone,
+              email: memoryStore.business.email,
+              address: memoryStore.business.address,
+              dailyTarget: memoryStore.business.dailyTarget.toFixed(2),
+            },
+          });
+      } catch {
+        // Handled silently
+      }
     }
 
     broadcastPostgresEvent({
@@ -440,40 +450,50 @@ export const BusinessModel = {
 
 export const UserModel = {
   async getOrCreateUser(uid: string, email: string, displayName?: string, role?: string) {
-    try {
-      const result = await db
-        .insert(users)
-        .values({
-          uid,
-          email,
-          displayName: displayName || '',
-          role: role || 'CASHIER',
-        })
-        .onConflictDoUpdate({
-          target: users.uid,
-          set: {
+    let user = memoryStore.users.find(u => u.uid === uid);
+    if (!user) {
+      user = {
+        uid,
+        email,
+        displayName: displayName || '',
+        role: role || 'CASHIER',
+        createdAt: new Date().toISOString(),
+      };
+      memoryStore.users.push(user);
+    } else {
+      user.email = email;
+      user.displayName = displayName || user.displayName;
+      user.role = role || user.role;
+    }
+
+    if (await isPostgresAvailable()) {
+      try {
+        const result = await db
+          .insert(users)
+          .values({
+            uid,
             email,
             displayName: displayName || '',
             role: role || 'CASHIER',
-          },
-        })
-        .returning();
+          })
+          .onConflictDoUpdate({
+            target: users.uid,
+            set: {
+              email,
+              displayName: displayName || '',
+              role: role || 'CASHIER',
+            },
+          })
+          .returning();
 
-      return result[0];
-    } catch (err) {
-      console.warn('[PostgreSQL ORM] User sync queued:', (err as Error).message);
-      let user = memoryStore.users.find(u => u.uid === uid);
-      if (!user) {
-        user = {
-          uid,
-          email,
-          displayName: displayName || '',
-          role: role || 'CASHIER',
-          createdAt: new Date().toISOString(),
-        };
-        memoryStore.users.push(user);
+        if (result && result.length > 0) {
+          return result[0];
+        }
+      } catch {
+        // Handled silently
       }
-      return user;
     }
+
+    return user;
   },
 };

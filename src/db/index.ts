@@ -24,12 +24,12 @@ export const createPool = (): Pool => {
       password: process.env.SQL_PASSWORD || 'postgres',
       database: process.env.SQL_DB_NAME || 'zawadi_mart_db',
       max: 10,
-      connectionTimeoutMillis: 15000,
+      connectionTimeoutMillis: 2000,
     });
 
     // Prevent unhandled pool-level errors from crashing the application
-    global._postgresPool.on('error', (err) => {
-      console.warn('PostgreSQL idle pool note:', err.message);
+    global._postgresPool.on('error', () => {
+      // Handled silently
     });
   }
   return global._postgresPool;
@@ -37,6 +37,27 @@ export const createPool = (): Pool => {
 
 // Create or retrieve the pool instance
 const pool = createPool();
+
+// Cached connection status to prevent connection spam if database is offline
+let cachedPostgresAvailable: boolean | null = null;
+let lastCheckTime = 0;
+
+export async function isPostgresAvailable(): Promise<boolean> {
+  const now = Date.now();
+  if (cachedPostgresAvailable !== null && now - lastCheckTime < 30000) {
+    return cachedPostgresAvailable;
+  }
+  lastCheckTime = now;
+  try {
+    const client = await pool.connect();
+    client.release();
+    cachedPostgresAvailable = true;
+    return true;
+  } catch {
+    cachedPostgresAvailable = false;
+    return false;
+  }
+}
 
 // Initialize Drizzle ORM with the pool and full PostgreSQL schema
 export const db = drizzle(pool, { schema });

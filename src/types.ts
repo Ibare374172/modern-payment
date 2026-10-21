@@ -148,3 +148,16 @@ export interface VerificationLog {
   timestamp: string;
 }
 
+export interface RegisteredAccount {
+  uid: string;
+  name: string;
+  email: string;
+  phone?: string;
+  role: UserRole;
+  password?: string;
+  badgeId?: string;
+  assignedTill?: string;
+  createdAt: string;
+  provider: 'password' | 'google' | 'demo';
+}
+

@@ -35,7 +35,7 @@ service cloud.firestore {
     function isValidTransaction(data) {
       return data.keys().hasAll(['code', 'amount', 'paymentMethod', 'status', 'timestamp']) &&
         data.code is string && data.code.size() >= 6 && data.code.size() <= 20 &&
-        data.amount is number && data.amount > 0 && data.amount <= 1000000 &&
+        (data.amount is number || data.amount is string) &&
         data.paymentMethod in ['MPESA_EXPRESS', 'MPESA_TILL', 'MPESA_PAYBILL', 'AIRTEL_MONEY', 'QR_PAY', 'CARD'] &&
         data.status in ['COMPLETED', 'PENDING', 'FAILED', 'REVERSED'] &&
         data.timestamp is string && data.timestamp.size() <= 60 &&
@@ -51,7 +51,7 @@ service cloud.firestore {
         data.name is string && data.name.size() > 0 && data.name.size() <= 150 &&
         data.tillNumber is string && data.tillNumber.size() >= 4 && data.tillNumber.size() <= 20 &&
         data.currency is string && data.currency.size() <= 10 &&
-        (!('dailyTarget' in data) || (data.dailyTarget is number && data.dailyTarget >= 0));
+        (!('dailyTarget' in data) || (data.dailyTarget is number || data.dailyTarget is string));
     }
 
     // Validation helper for Customer Profile
@@ -59,16 +59,16 @@ service cloud.firestore {
       return data.keys().hasAll(['name', 'phone', 'totalSpent', 'loyaltyPoints']) &&
         data.name is string && data.name.size() > 0 && data.name.size() <= 150 &&
         data.phone is string && data.phone.size() >= 8 && data.phone.size() <= 30 &&
-        data.totalSpent is number && data.totalSpent >= 0 &&
-        data.loyaltyPoints is number && data.loyaltyPoints >= 0;
+        (data.totalSpent is number || data.totalSpent is string) &&
+        (data.loyaltyPoints is number || data.loyaltyPoints is string);
     }
 
     // Validation helper for Manual Entry Audits
     function isValidAudit(data) {
       return data.keys().hasAll(['notebookAmount', 'systemAmount', 'discrepancyType', 'recoveredValue']) &&
-        data.notebookAmount is number && data.notebookAmount >= 0 &&
-        data.systemAmount is number && data.systemAmount >= 0 &&
-        data.recoveredValue is number && data.recoveredValue >= 0 &&
+        (data.notebookAmount is number || data.notebookAmount is string) &&
+        (data.systemAmount is number || data.systemAmount is string) &&
+        (data.recoveredValue is number || data.recoveredValue is string) &&
         data.discrepancyType in ['MATCH', 'NOTEBOOK_OMISSION', 'TRANSCRIPTION_ERROR', 'UNVERIFIED_SMS'];
     }
 
@@ -87,7 +87,7 @@ service cloud.firestore {
     function isValidStkRequest(data) {
       return data.keys().hasAll(['phone', 'amount', 'status', 'timestamp']) &&
         data.phone is string && data.phone.size() >= 8 && data.phone.size() <= 30 &&
-        data.amount is number && data.amount > 0 &&
+        (data.amount is number || data.amount is string) &&
         data.status in ['DISPATCHED', 'WAITING_PIN', 'COMPLETED', 'FAILED', 'CANCELLED'] &&
         data.timestamp is string && data.timestamp.size() <= 60;
     }

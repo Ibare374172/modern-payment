@@ -21,6 +21,7 @@ export interface StkPushPayload {
   shortcode?: string;
   environment?: 'sandbox' | 'production';
   forceSimulate?: boolean;
+  transactionType?: string;
 }
 
 export interface StkPushResponse {

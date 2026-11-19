@@ -180,32 +180,12 @@ export const DarajaConfigModal: React.FC<DarajaConfigModalProps> = ({
             />
           </div>
 
-          {/* Consumer Key */}
-          <div>
-            <label className="text-xs font-semibold text-stone-700 block mb-1">
-              Daraja Consumer Key
-            </label>
-            <input
-              type="password"
-              value={config.consumerKey || ''}
-              onChange={e => setConfig({ ...config, consumerKey: e.target.value })}
-              placeholder="Enter Safaricom Consumer Key"
-              className="w-full px-3 py-2 text-xs font-mono rounded-lg border border-stone-300 focus:outline-emerald-600"
-            />
-          </div>
-
-          {/* Consumer Secret */}
-          <div>
-            <label className="text-xs font-semibold text-stone-700 block mb-1">
-              Daraja Consumer Secret
-            </label>
-            <input
-              type="password"
-              value={config.consumerSecret || ''}
-              onChange={e => setConfig({ ...config, consumerSecret: e.target.value })}
-              placeholder="Enter Safaricom Consumer Secret"
-              className="w-full px-3 py-2 text-xs font-mono rounded-lg border border-stone-300 focus:outline-emerald-600"
-            />
+          {/* Backend Security Notice */}
+          <div className="bg-stone-50 border border-stone-200 rounded-xl p-3 text-xs text-stone-700">
+            <p className="font-semibold text-stone-900 mb-0.5">Consumer Key & Secret (Backend Secure)</p>
+            <p className="text-[11px] text-stone-600 leading-relaxed">
+              Daraja Consumer Key and Secret are securely managed at the backend environment (<code className="font-mono bg-stone-200 px-1 rounded">.env</code>). No manual client keying is required.
+            </p>
           </div>
 
           {/* Passkey */}

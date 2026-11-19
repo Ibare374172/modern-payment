@@ -94,6 +94,20 @@ export class ApiClient {
   }
 
   /**
+   * POST /api/stkpush/confirm - Manually confirm or submit PIN
+   */
+  public static async confirmStkPush(checkoutRequestId: string, pin?: string): Promise<{ success: boolean; receiptCode?: string; error?: string }> {
+    const res = await fetch('/api/stkpush/confirm', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ checkoutRequestId, pin }),
+    });
+    return res.json();
+  }
+
+  /**
    * POST /api/daraja/test - Tests Daraja credentials on backend
    */
   public static async testDaraja(credentials: {

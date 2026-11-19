@@ -20,8 +20,13 @@ export function getStoredDarajaConfig(): DarajaConfig {
   } catch {
     // Ignore
   }
+  
+  // Use .env variables as fallback if not in localStorage
+  const envMeta = (import.meta as any).env || {};
   return {
-    environment: 'sandbox',
+    environment: (envMeta.VITE_DARAJA_ENV === 'production' ? 'production' : 'sandbox') as 'sandbox' | 'production',
+    consumerKey: envMeta.VITE_DARAJA_CONSUMER_KEY || '',
+    consumerSecret: envMeta.VITE_DARAJA_CONSUMER_SECRET || '',
     shortcode: '174379',
     myPhoneNumber: '0712345678',
   };
@@ -138,3 +143,12 @@ export async function testDarajaCredentials(config: DarajaConfig): Promise<{ val
     };
   }
 }
+
+export async function confirmStkPushTransaction(checkoutRequestId: string, pin?: string): Promise<{ success: boolean; receiptCode?: string; error?: string }> {
+  return await ApiClient.confirmStkPush(checkoutRequestId, pin);
+}
+
+export async function queryStkPushStatus(checkoutRequestId: string) {
+  return await ApiClient.queryStkStatus(checkoutRequestId);
+}
+

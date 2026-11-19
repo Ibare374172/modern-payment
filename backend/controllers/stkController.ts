@@ -81,4 +81,40 @@ export class StkController {
 
     return res.json({ ResultCode: 0, ResultDesc: 'Accepted' });
   }
+
+  /**
+   * POST /api/stkpush/confirm
+   * Manually confirm or submit PIN for an STK push transaction
+   */
+  public static async confirm(req: Request, res: Response) {
+    try {
+      const { checkoutRequestId, pin } = req.body;
+      if (!checkoutRequestId) {
+        return res.status(400).json({ error: 'checkoutRequestId is required.' });
+      }
+      const record = stkStore.get(checkoutRequestId);
+      if (!record) {
+        return res.status(404).json({ error: 'Transaction record not found.' });
+      }
+
+      // Generate realistic M-Pesa receipt code if not already set
+      const receiptCode = record.mpesaReceiptNumber || 'SB' + Math.floor(10000000 + Math.random() * 90000000).toString().slice(0, 8);
+      
+      const updated = stkStore.update(checkoutRequestId, {
+        status: 'COMPLETED',
+        resultDesc: 'The service request is processed successfully.',
+        mpesaReceiptNumber: receiptCode,
+      });
+
+      return res.json({
+        success: true,
+        record: updated,
+        receiptCode,
+        message: 'Payment confirmed successfully.',
+      });
+    } catch (error) {
+      console.error('[StkController] Error confirming STK push:', error);
+      return res.status(500).json({ error: 'Failed to confirm STK push.' });
+    }
+  }
 }
